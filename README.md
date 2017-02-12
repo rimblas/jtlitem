@@ -9,7 +9,7 @@ This plugin allows you to store multiple language translations on a single table
 
 ### How to use?
 
-Add a column with a `_JTL` suffix to your table. For example, a `NAME` column would become `NAME_JTL`:
+Add a column with a `_JTL` suffix to your table (or any other suffix you like). For example, a `NAME` column would become `NAME_JTL`:
 
 ```
 create table px_projects (
@@ -58,7 +58,7 @@ In general, the only time you care about the stored format is when you need to s
 **IMPORTANT** The "Edit Languages" field to `return true;` to see the globe.
 
 #### Other Settings
-Use the `APEX.PAGE_ITEM_IS_REQUIRED` message to translate your "#LABEL# must have some value." to your correct language.  The plugin `validate` function will fetch this value (via `wwv_flow_lang.system_message`) when the "Required" attribute is set.
+Optionally, use the `APEX.PAGE_ITEM_IS_REQUIRED` message to translate your "#LABEL# must have some value." to your correct language.  The plugin `validate` function will fetch this value (via `wwv_flow_lang.system_message`) when the "Required" attribute is set.
 
 #### Accessing your Data
 
@@ -89,7 +89,7 @@ select t.id
 
 #### Programatic access to your data
 
-The provided package `tk_jtl_plugin` contains several useful [functions and procesures](docs/tk_jtl_plugin.md).
+The provided package `tk_jtl_plugin` contains several useful [functions and procedures](docs/tk_jtl_plugin.md).
 
 For example, use `` on a validation to verify a name is unique within a language.
 
@@ -128,14 +128,15 @@ You'll also miss out of the JSON constraint on the column, but this is not a con
 
 
 ### Issues/Questions
-* New languages added at a later date will require the \_JTL columns be *updated* with the new language.
+* How do I "install" a new language? — New languages added at a later date will require the `_JTL` columns be *updated* with the new language.
 * Removing languages may require data updates also, however, this could be handled by the plugin.
-* The \_JTL column datatype does not match required column size. Columns need to be as large as the desired size times the languages plus the JSON overhead.
-* Column sizes need to be enforced via APEX Maximum Length field and in the \_VL views as part of the `JSON_TABLE`.
+* The `_JTL` column datatype does not match required column size. Columns need to be as large as the desired size times the languages plus the JSON overhead. Use a size `{Required Size} x {# of Languages} + offset`
+* Column sizes need to be enforced via APEX Maximum Length field and in the `_VL` views as part of the `JSON_TABLE`.
 * Plugin does not perform size validations or validate the correct JSON structure is in place.
 * There seem to be an issue in 12.1 and 12.2 when using more than one JSON column. See this [livesql script](https://livesql.oracle.com/apex/livesql/s/dwifcd7pqq1eg64z0jkblyin6) for a test case.  Perhaps I'm doing something wrong or you have a suggestion. If so, please don't hesitate to raise it as an [Issue](https://github.com/rimblas/jtlitem/issues).
 
 ### Pending
+* Implement `TEXTAREA`
 * The following functionality needs to be tested:
     - Hide
     - Show
