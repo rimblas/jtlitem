@@ -1,0 +1,34 @@
+{
+  "name" : "JTL Item",
+  "version" : "0.1",
+  "description" : "Item plugin for storing multi-language translations (MLS) in a JSON column.",
+  "keywords" : ["MLS", "multi-language", "language", "translations", "JSON"],
+  "homepage" : "https://github.com/rimblas/jtlitem",
+  "bugs" : {
+    "url" : "https://github.com/rimblas/jtlitem/issues",
+    "email" : "jorge@rimblas.com"
+  },
+  "license" : "MIT",
+  "author" : {
+    "name" : "Jorge Rimblas",
+    "email" : "https://github.com/rimblas/jtlitem",
+    "url" : "http://rimblas.com/blog/",
+    "twitter" : "rimblas"
+  },
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/rimblas/jtlitem.git"
+  },
+  "oracle" : {
+    "versions" : ["11.2.0.1", "12.1.0.1"],
+    "apex" : {
+      "versions" : ["5.0.0"],
+      "plugin" : {
+        "internalName" : "JMR.MLS.JTLITEM",
+        "type" : "item",
+        "demo" : "https://apex.oracle.com/pls/apex/f?p=97705",
+        "previewImage" : "https://raw.githubusercontent.com/rimblas/jtlitem/master/preview.png"
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+.jtlitem-controls {
+  display: inline-block;
+}
+.t-Form-fieldContainer--large button.jtlitem-modal-open.t-Button {
+    padding: .8rem .9rem;
+}
+.t-Form-fieldContainer--xlarge button.jtlitem-modal-open.t-Button {
+    padding: 1.2rem;
+}
+button.jtlitem-modal-open {
+  padding: .4rem .8rem;
+}
+.jtlitem-content {
+  margin: 0 10px;
+}
+.jtlitem-content table {
+  margin: 10px 0;
+}
+.jtlitem-content table td.selected {
+  background-color: #f7f7ba;
+}
+.jtlitem-button-container .ui-icon {
+  display: inline-block;
+}
+.jtlitem-button-container {
+  padding: 5px 10px;
+  position: relative;
+  float: right;
+}
+/*
+.jtlitem-dialog button {
+  border: none;
+  color: #383838;
+  background-clip: padding-box;
+  background-color: #f8f8f8;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.125) inset;
+  border-radius: 2px;
+  text-shadow: none;
+  padding: .4rem .8rem;
+  display: inline-block;
+  margin: .4rem;
+}
+*/
+.jtlitem-button-container .t-Button-label {
+  line-height: 1.8rem;
+  vertical-align: top;
+}
