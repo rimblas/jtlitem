@@ -7,6 +7,9 @@ This plugin allows you to store multiple language translations on a single table
 ### Demo
 [Run Demo](https://apex.oracle.com/pls/apex/f?p=97705)
 
+### Preview
+![Alt text](/preview.gif?raw=true "Preview")
+
 ### How to use?
 
 Add a column with a `_JTL` suffix to your table (or any other suffix you like). For example, a `NAME` column would become `NAME_JTL`:
