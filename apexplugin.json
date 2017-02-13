@@ -20,9 +20,9 @@
     "url" : "https://github.com/rimblas/jtlitem.git"
   },
   "oracle" : {
-    "versions" : ["11.2.0.1", "^12.*"],
+    "versions" : ["11.2.0.1", "12.1.0.2.0"],
     "apex" : {
-      "versions" : ["^5.*.*"],
+      "versions" : ["5.0.0"],
       "plugin" : {
         "internalName" : "JMR.MLS.JTLITEM",
         "type" : "item",

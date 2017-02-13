@@ -339,7 +339,7 @@ wwv_flow_api.create_plugin(
 ,p_substitute_attributes=>true
 ,p_subscribe_plugin_settings=>true
 ,p_help_text=>'Plugin for storing multi-language translations (MLS) in a JSON column.'
-,p_version_identifier=>'0.1'
+,p_version_identifier=>'0.1.0'
 ,p_about_url=>'https://github.com/rimblas/jtlitem'
 ,p_files_version=>48
 );

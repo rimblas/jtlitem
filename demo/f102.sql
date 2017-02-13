@@ -27,7 +27,7 @@ prompt APPLICATION 102 - JTL Item Translation Demo
 -- Application Export:
 --   Application:     102
 --   Name:            JTL Item Translation Demo
---   Date and Time:   17:02 Sunday February 12, 2017
+--   Date and Time:   22:54 Sunday February 12, 2017
 --   Exported By:     JRIMBLAS
 --   Flashback:       0
 --   Export Type:     Application Export
@@ -114,7 +114,7 @@ wwv_flow_api.create_flow(
 ,p_csv_encoding=>'Y'
 ,p_auto_time_zone=>'N'
 ,p_last_updated_by=>'JRIMBLAS'
-,p_last_upd_yyyymmddhh24miss=>'20170212170241'
+,p_last_upd_yyyymmddhh24miss=>'20170212225427'
 ,p_file_prefix => nvl(wwv_flow_application_install.get_static_app_file_prefix,'')
 ,p_files_version=>3
 ,p_ui_type_name => null
@@ -12750,7 +12750,7 @@ wwv_flow_api.create_plugin(
 ,p_substitute_attributes=>true
 ,p_subscribe_plugin_settings=>true
 ,p_help_text=>'Plugin for storing multi-language translations (MLS) in a JSON column.'
-,p_version_identifier=>'0.1'
+,p_version_identifier=>'0.1.0'
 ,p_about_url=>'https://github.com/rimblas/jtlitem'
 ,p_files_version=>48
 );
@@ -13476,7 +13476,6 @@ wwv_flow_api.create_page(
 ,p_step_title=>'Maintain Project'
 ,p_step_sub_title_type=>'TEXT_WITH_SUBSTITUTIONS'
 ,p_first_item=>'NO_FIRST_ITEM'
-,p_javascript_file_urls=>'https://dl.dropboxusercontent.com/u/82641814/dist/js/oos_item_json_mls.js'
 ,p_javascript_code=>wwv_flow_utilities.join(wwv_flow_t_varchar2(
 'var htmldb_delete_message=''"DELETE_CONFIRM_MSG"'';',
 '',
@@ -13487,12 +13486,8 @@ wwv_flow_api.create_page(
 ,p_protection_level=>'C'
 ,p_cache_mode=>'NOCACHE'
 ,p_help_text=>'No help is available for this page.'
-,p_page_comment=>wwv_flow_utilities.join(wwv_flow_t_varchar2(
-'For developement:',
-'https://dl.dropboxusercontent.com/u/82641814/dist/js/oos_item_json_mls.js',
-'https://dl.dropboxusercontent.com/u/82641814/dist/css/oos_item_json_mls.css'))
 ,p_last_updated_by=>'JRIMBLAS'
-,p_last_upd_yyyymmddhh24miss=>'20170212165238'
+,p_last_upd_yyyymmddhh24miss=>'20170212214058'
 );
 wwv_flow_api.create_page_plug(
  p_id=>wwv_flow_api.id(7878969186085350)
@@ -13652,7 +13647,7 @@ wwv_flow_api.create_page_item(
 ,p_display_as=>'PLUGIN_JMR.MLS.JTLITEM'
 ,p_cSize=>40
 ,p_cMaxlength=>60
-,p_field_template=>wwv_flow_api.id(7869530099085060)
+,p_field_template=>wwv_flow_api.id(7869781796085060)
 ,p_item_template_options=>'#DEFAULT#'
 ,p_help_text=>wwv_flow_utilities.join(wwv_flow_t_varchar2(
 'This item is using a multi-language plugin. All translations for a column are stored along with the column in JSON format.<br>',
@@ -13785,7 +13780,7 @@ wwv_flow_api.create_page_item(
 ,p_display_as=>'PLUGIN_JMR.MLS.JTLITEM'
 ,p_cSize=>80
 ,p_cMaxlength=>400
-,p_field_template=>wwv_flow_api.id(7869530099085060)
+,p_field_template=>wwv_flow_api.id(7869781796085060)
 ,p_item_template_options=>'#DEFAULT#'
 ,p_help_text=>wwv_flow_utilities.join(wwv_flow_t_varchar2(
 'This item is using a multi-language plugin. All translations for a column are stored along with the column in JSON format.<br>',
@@ -13804,7 +13799,7 @@ wwv_flow_api.create_page_validation(
  p_id=>wwv_flow_api.id(13150904191473505)
 ,p_validation_name=>'P3_NAME_JTL is not null'
 ,p_validation_sequence=>10
-,p_validation=>'tk_jtl_plugin.get_tl(:P3_NAME_JTL, :BROWSER_LANGUAGE) is not null'
+,p_validation=>'tk_jtl_plugin.get_tl_value(:P3_NAME_JTL) is not null'
 ,p_validation_type=>'PLSQL_EXPRESSION'
 ,p_error_message=>'The name is required'
 ,p_always_execute=>'N'
