@@ -1,8 +1,8 @@
 {
   "name" : "JTL Item",
   "version" : "0.1.0",
-  "description" : "Item plugin for storing multi-language translations (MLS) in a JSON column.",
-  "keywords" : ["MLS", "multi-language", "language", "translations", "JSON"],
+  "description" : "Store multi-language translations (MLS) in a single JSON column and use this Item plugin to easily maintain them.",
+  "keywords" : ["MLS", "multi-language", "language", "translations", "translated", "JSON"],
   "homepage" : "https://github.com/rimblas/jtlitem",
   "bugs" : {
     "url" : "https://github.com/rimblas/jtlitem/issues",
