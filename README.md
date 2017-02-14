@@ -107,6 +107,14 @@ where id <> nvl(:P25_ID, -1)
 
 Also, the plugin `render` and `validate` functions are part of the `tk_jtl_plugin` package. You'll want to remove the code from the Plugin Source and change the render and validate functions to `tk_jtl_plugin.render` and `tk_jtl_plugin.validate` respectively.
 
+### Why?
+If you ever had to create a multi-language app, you know that a typical approach is to store the translated values on a translation table. Therefore, every translated entity (table) will require a child table with translations. This design pattern is cumbersome to work with and comes with significan application overhead.
+The JSON Translation concept, or JTL for short, has several benefits for APEX applications:
+* It allows the developer to continue working with a single table using the Built-In "Automatic Row Fetch" and "Automatic Row Processing" processes.
+* Translated columns are treated regular APEX Items via the JTL Item plugin.
+* Data can be retrieved and displayed via a translation view (`_VL`)
+* The included `tk_jtl_plugin` package includes several useful [functions and procedures](docs/tk_jtl_plugin.md) for manipulating the JSON object in a programmatic way.
+
 
 ### Disclaimer
 This plugin is still work in progress. Use at your own risk and without any warranties.
