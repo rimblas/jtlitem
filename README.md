@@ -1,5 +1,8 @@
 # APEX JTL Item Plugin
 
+[![APEX Community](https://cdn.rawgit.com/Dani3lSun/apex-github-badges/78c5adbe/badges/apex-community-badge.svg)](https://github.com/Dani3lSun/apex-github-badges) [![APEX Plugin](https://cdn.rawgit.com/Dani3lSun/apex-github-badges/b7e95341/badges/apex-plugin-badge.svg)](https://github.com/Dani3lSun/apex-github-badges)
+[![APEX Built with Love](https://cdn.rawgit.com/Dani3lSun/apex-github-badges/7919f913/badges/apex-love-badge.svg)](https://github.com/Dani3lSun/apex-github-badges)
+
 An Oracle APEX Item plugin for storing multi-language translations (MLS) in a JSON column.
 
 This plugin allows you to store multiple language translations on a **single table column**. Optionally, the user can popup a dialog and edit all the available translations.
