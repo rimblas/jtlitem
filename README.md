@@ -120,7 +120,7 @@ The JSON Translation concept, or JTL for short, has several benefits for APEX ap
 
 
 ## Disclaimer
-This plugin is still work in progress. Use at your own risk and without any warranties.
+Although we successfully use this plugin and technique in production internally at [Insum Solutions](https://insum.ca), use at your own risk and without any warranties.
 
 
 ## Running in 11g without JSON columns
@@ -151,7 +151,8 @@ You'll also miss out of the JSON constraint on the column, but this is not a con
 * The `_JTL` column datatype does not match required column size. Columns need to be as large as the desired size times the languages plus the JSON overhead. Use a size `{Required Size} x {# of Languages} + offset`
 * Column sizes need to be enforced via APEX Maximum Length field and in the `_VL` views as part of the `JSON_TABLE`.
 * Plugin does not perform size validations or validate the correct JSON structure is in place.
-* There seems to be an issue in 12.1 and 12.2 when using more than one JSON column. See this [livesql script](https://livesql.oracle.com/apex/livesql/s/dwifcd7pqq1eg64z0jkblyin6) for a test case.  Perhaps I'm doing something wrong, or you have a suggestion. If so, please don't hesitate to raise it as an [Issue](https://github.com/rimblas/jtlitem/issues).
+* There seems to be an issue in 12.1 and 12.2 when using when joining than one JSON column on a table. See this [livesql script](https://livesql.oracle.com/apex/livesql/s/dwifcd7pqq1eg64z0jkblyin6) for a test case. However, Patch# 24460392 seems to have fixed this issue.
+* You found something? Please report an [Issue](https://github.com/rimblas/jtlitem/issues).
 
 ## Pending
 * Need to implement `TEXTAREA`, currently all translated items are input boxes.
