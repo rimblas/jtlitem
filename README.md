@@ -155,13 +155,13 @@ You'll also miss out of the JSON constraint on the column, but this is not a con
 * You found something? Please report an [Issue](https://github.com/rimblas/jtlitem/issues).
 
 ## Change Log
-### v1.0.0
+### v1.0.0, February 1, 2018
 * Implemented TEXTAREAS
 
-### v0.1.0 initial release
+### v0.1.0 initial release, Feb 12, 2017
 
 ## Roadmap
-* Need to implement `TEXTAREA`, currently all translated items are input boxes.
+* Display language names instead of language codes on the edit modal.
 * The following functionality needs to be tested:
     - Hide
     - Show
