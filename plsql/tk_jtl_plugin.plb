@@ -59,6 +59,7 @@ is
 
   l_name              varchar2(255);
   l_display_value     gt_string;
+  l_item_type         gt_string;
 
   l_onload_code       gt_string;
   l_item_jq           gt_string := apex_plugin_util.page_item_names_to_jquery(p_item.name);
@@ -66,7 +67,7 @@ is
   -- l_item_display_jq   gt_string := apex_plugin_util.page_item_names_to_jquery(l_item_display);
 
   l_render_result     apex_plugin.t_page_item_render_result;
-
+  
   l_crlf              char(2) := chr(13)||chr(10);
 
 begin
@@ -76,8 +77,10 @@ begin
                                , apex_util.get_session_lang);
   l_edit_languages := apex_plugin_util.get_plsql_func_result_boolean(p_item.attribute_02);
   l_languages_list := apex_plugin_util.get_plsql_function_result(p_plugin.attribute_01); -- Enabled Language List
+  l_item_type := nvl(p_item.attribute_03, 'TEXT');
 
   apex_debug.message('p_item.attribute_02: %s', p_item.attribute_02);
+  apex_debug.message('p_item.attribute_03: %s', p_item.attribute_03);
 
   if (apex_application.g_debug) then
     apex_plugin_util.debug_page_item(p_plugin, p_item, p_value, p_is_readonly, p_is_printer_friendly);
@@ -161,15 +164,32 @@ begin
     -- end if;
 
     sys.htp.p (
-        '<fieldset id="' || p_item.name || '_fieldset" class="jtlitem-controls">');
-    sys.htp.prn (
-        '<input type="text" id="' || l_item_display || '" '
-             || 'value="'|| apex_plugin_util.escape(p_value => l_display_value, p_escape => p_item.escape_output) || '" '
-             || 'size="' || p_item.element_width||'" '
-             || 'maxlength="'||p_item.element_max_length||'" '
-             || 'data-lang="' || sys.htf.escape_sc(l_language) || '" '
-             || 'class="text_field jtlitem ' || p_item.element_css_classes || '"'
-             || p_item.element_attributes ||' />' );
+        '<fieldset id="' || p_item.name || '_fieldset" class="jtlitem-controls'
+     || case when l_item_type = 'TEXTAREA' then ' textarea' end 
+     || '" tabindex="-1">');
+
+    if l_item_type = 'TEXT' then
+      sys.htp.prn (
+          '<input type="text" id="' || l_item_display || '" '
+               || 'value="'|| apex_plugin_util.escape(p_value => l_display_value, p_escape => p_item.escape_output) || '" '
+               || 'size="' || p_item.element_width||'" '
+               || 'maxlength="'||p_item.element_max_length||'" '
+               || 'data-lang="' || sys.htf.escape_sc(l_language) || '" '
+               || 'class="text_field apex-item-text jtlitem ' || p_item.element_css_classes || '"'
+               || p_item.element_attributes ||' />' );
+    else
+      sys.htp.prn (
+          '<textarea id="' || l_item_display || '" wrap="virtual" style="resize: both;" '
+               || 'data-lang="' || sys.htf.escape_sc(l_language) || '" '
+               || 'class="textarea apex-item-textarea jtlitem ' || p_item.element_css_classes || '"'
+               || 'cols="' || p_item.element_width||'" '
+               || 'rows="' || p_item.element_height||'" '
+               -- || 'maxlength="'||p_item.element_max_length||'" '
+               || p_item.element_attributes ||' >'
+               || apex_plugin_util.escape(p_value => l_display_value, p_escape => p_item.escape_output)
+       || '</textarea>');
+    end if;
+
     if l_edit_languages then
       sys.htp.p (
                   '    <button type="button" class="jtlitem-modal-open t-Button">' || l_crlf
@@ -198,6 +218,7 @@ begin
                       || apex_javascript.add_attribute('lang', l_language, true, true) || l_crlf
                       || apex_javascript.add_attribute('lang_codes', l_languages_list, false, true) || l_crlf
                       || apex_javascript.add_attribute('messages', l_messages, false, true) || l_crlf
+                      || apex_javascript.add_attribute('itemType', l_item_type, false, true) || l_crlf
                       || apex_javascript.add_attribute('dialogTitle', l_dialog_title, false, false) || l_crlf
              || '});'
             );

@@ -1,7 +1,8 @@
 /*
- * JTL Item v0.1 - http://apex.world/plugins/
+ * JTL Item v2.0 - http://apex.world/plugins/
  *
- * Licensed under ...: ?
+ * Licensed under MIT License (MIT)
+ * Jorge Rimblas © 2017
 */
 
 $.widget( "tk.jtl_item", {
@@ -12,6 +13,7 @@ $.widget( "tk.jtl_item", {
      lang_codes: ["en","fr","es"],
      messages: null,
      fieldSize: 30,
+     fieldRows: 5,
      fieldMaxLength: 80,
      dialogTitle: null
   },
@@ -142,8 +144,11 @@ $.widget( "tk.jtl_item", {
      var uiw = this;
 
      uiw._elements.$hiddenInput = uiw.element;
-     uiw._elements.$displayInput = $('#' + uiw._values.apexItemId + '_DISPLAY');
-     uiw._values.fieldSize = uiw._elements.$displayInput.attr("size");
+     uiw._elements.$displayInput = $('#' + uiw._values.apexItemId + '_DISPLAY');     
+     uiw._values.fieldSize = uiw.options.itemType === "TEXT"? uiw._elements.$displayInput.attr("size") : uiw._elements.$displayInput.attr("cols");
+     if (uiw.options.itemType === "TEXTAREA") {
+       uiw._values.fieldRows = uiw._elements.$displayInput.attr("rows");
+     }
      uiw._values.fieldMaxLength = uiw._elements.$displayInput.attr("maxlength");
 
      uiw._elements.$fieldset = $('#' + uiw._values.controlsId);
@@ -225,7 +230,7 @@ $.widget( "tk.jtl_item", {
      var uiw = eventObj.data.uiw,
          display_value;
 
-     uiw._elements.$dialogContent.find('input').each(function(i,el){
+     uiw._elements.$dialogContent.find('.jtlitem-value').each(function(i,el){
         apex.debug.message(4,i + "(" + el.dataset.lang + "):" + el.value);
         uiw._values.dataJSON[i].l = el.dataset.lang;
         uiw._values.dataJSON[i].tl = el.value;
@@ -295,9 +300,19 @@ $.widget( "tk.jtl_item", {
        langTable +=
        ' <tr>\n' +
        '  <td class="t-Report-cell t-Form-inputContainer u-tC' + (curr_lang==index? ' selected':'') + '">' + apex.util.escapeHTMLAttr(lang) + '</td>' +
-       '  <td class="t-Report-cell t-Form-inputContainer u-tL' + (curr_lang==index? ' selected':'') + '">' + 
-       '    <input type="text" class="text_field" data-lang="' + lang + '" value="' + apex.util.escapeHTMLAttr(uiw._hasTag(lang)) + '" size="' + uiw._values.fieldSize + '" maxlength="' + uiw._values.fieldMaxLength + '"></td>' +
-       ' </tr>\n';
+       '  <td class="t-Report-cell t-Form-inputContainer u-tL' + (curr_lang==index? ' selected':'') + '">';
+       if (uiw.options.itemType === "TEXT") {
+         langTable +=
+         '    <input type="text" class="text_field apex-item-text jtlitem-value" data-lang="' + lang + '" value="' + apex.util.escapeHTMLAttr(uiw._hasTag(lang)) + '" size="' + uiw._values.fieldSize + '" maxlength="' + uiw._values.fieldMaxLength + '"></td>';
+       }
+       else {
+         langTable +=
+         '    <textarea class="textarea apex-item-textarea jtlitem-value" data-lang="' + lang + '" cols="' + uiw._values.fieldSize + '" rows="' + uiw._values.fieldRows + '">' +
+         apex.util.escapeHTMLAttr(uiw._hasTag(lang)) + '</textarea>';
+       }
+
+       langTable +=
+        ' </tr>\n';
      });
      langTable +=
      '</table>\n';

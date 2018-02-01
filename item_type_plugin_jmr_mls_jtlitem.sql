@@ -13,10 +13,10 @@ whenever sqlerror exit sql.sqlcode rollback
 begin
 wwv_flow_api.import_begin (
  p_version_yyyy_mm_dd=>'2013.01.01'
-,p_release=>'5.0.3.00.03'
-,p_default_workspace_id=>1851245620250164
-,p_default_application_id=>102
-,p_default_owner=>'OBE'
+,p_release=>'5.0.4.00.12'
+,p_default_workspace_id=>260653474592536364
+,p_default_application_id=>4000250
+,p_default_owner=>'PHOENIX'
 );
 end;
 /
@@ -28,313 +28,13 @@ end;
 prompt --application/shared_components/plugins/item_type/jmr_mls_jtlitem
 begin
 wwv_flow_api.create_plugin(
- p_id=>wwv_flow_api.id(47042147073940200)
+ p_id=>wwv_flow_api.id(567255714498313901)
 ,p_plugin_type=>'ITEM TYPE'
 ,p_name=>'JMR.MLS.JTLITEM'
 ,p_display_name=>'JTL Item'
 ,p_supported_ui_types=>'DESKTOP'
-,p_plsql_code=>wwv_flow_utilities.join(wwv_flow_t_varchar2(
-'subtype gt_string is varchar2(32767);',
-'',
-'------------------------------------------------------------------------------',
-'/**',
-' * Render the item as a hidden and display combo.',
-' * Original concept for using JSON columns to store language: Bruno Mailloux',
-' *',
-' * ',
-' * @issue',
-' *',
-' * @author Jorge Rimblas',
-' * @created September 19, 2016',
-' * @param p_item Standard plugin parameters',
-' * @return',
-' */',
-'function render(',
-'    p_item                in apex_plugin.t_page_item',
-'  , p_plugin              in apex_plugin.t_plugin',
-'  , p_value               in gt_string',
-'  , p_is_readonly         in boolean',
-'  , p_is_printer_friendly in boolean',
-' )',
-'return apex_plugin.t_page_item_render_result',
-'is',
-'',
-'  l_default_language        gt_string;',
-'  l_language                gt_string;',
-'  l_edit_languages          boolean := false;',
-'  l_languages_list          gt_string;',
-'  l_dialog_title            gt_string := p_item.plain_label;',
-'  l_messages                gt_string := p_plugin.attribute_02; -- for MLS messages',
-'',
-'  l_postfix           varchar2(8);',
-'  l_idx               number;',
-'  l_count             number;',
-'  l_found             boolean := false;',
-'',
-'  l_name              varchar2(255);',
-'  l_display_value     gt_string;',
-'',
-'  l_onload_code       gt_string;',
-'  l_item_jq           gt_string := apex_plugin_util.page_item_names_to_jquery(p_item.name);',
-'  l_item_display      gt_string := p_item.name ||''_DISPLAY'';',
-'  -- l_item_display_jq   gt_string := apex_plugin_util.page_item_names_to_jquery(l_item_display);',
-'',
-'  l_render_result     apex_plugin.t_page_item_render_result;',
-'',
-'  l_crlf              char(2) := chr(13)||chr(10);',
-'',
-'begin',
-'  apex_debug.message(''BEGIN'');',
-'',
-'  l_default_language := coalesce(apex_plugin_util.replace_substitutions(p_item.attribute_01)',
-'                               , apex_util.get_session_lang);',
-'  l_edit_languages := apex_plugin_util.get_plsql_func_result_boolean(p_item.attribute_02);',
-'  l_languages_list := apex_plugin_util.get_plsql_function_result(p_plugin.attribute_01); -- Enabled Language List',
-'',
-'  apex_debug.message(''p_item.attribute_02: %s'', p_item.attribute_02);',
-'',
-'  if (apex_application.g_debug) then',
-'    apex_plugin_util.debug_page_item(p_plugin, p_item, p_value, p_is_readonly, p_is_printer_friendly);',
-'    apex_debug.message(''l_default_language: %s'', l_default_language);',
-'  end if;',
-'  -- Tell APEX that this field is navigable',
-'  l_render_result.is_navigable := true;',
-'',
-'',
-'  -- get the value for the language',
-'  apex_json.parse(p_value);',
-'  apex_debug.message(''parsing: %s'', p_value);',
-'  l_count := apex_json.get_count(p_path => ''.'');',
-'  apex_debug.message(''lagunages count: %s'', l_count);',
-'',
-'  l_idx := 1;',
-'  l_found := false;',
-'  while not l_found and l_idx <= nvl(l_count,0) loop',
-'    l_language := apex_json.get_varchar2(p_path => ''[%d].l'', p0 => l_idx);',
-'    apex_debug.message(''language: %s'', l_language);',
-'',
-'    if l_language = l_default_language then',
-'      l_display_value := apex_json.get_varchar2(p_path => ''[%d].tl'', p0 => l_idx);',
-'      apex_debug.message(''Translation: %s'', l_display_value);',
-'      l_found := true;',
-'    end if;',
-'    l_idx := l_idx + 1;',
-'    ',
-'  end loop;',
-'',
-'  -- If we didn''t find a language match, default to the first entry',
-'  if not l_found then',
-'    -- l_language := l_default_language;',
-'    l_language := apex_json.get_varchar2(p_path => ''[%d].l'', p0 => 1);',
-'    l_display_value := apex_json.get_varchar2(p_path => ''[%d].tl'', p0 => 1);',
-'    apex_debug.message(''Didn''''t find a language match, using the 1st language: %s'', l_language);',
-'  end if;',
-'',
-'  -- If a page item saves state, we have to call the get_input_name_for_page_item',
-'  -- to render the internal hidden p_arg_names field. It will also return the',
-'  -- HTML field name which we have to use when we render the HTML input field.',
-'',
-'  if p_is_readonly or p_is_printer_friendly then',
-'    -- if the item is readonly we will still render a hidden field with',
-'    -- the value so that it can be used when the page gets submitted',
-'    apex_plugin_util.print_hidden_if_readonly(',
-'        p_item_name           => p_item.name,',
-'        p_value               => p_value,',
-'        p_is_readonly         => p_is_readonly,',
-'        p_is_printer_friendly => p_is_printer_friendly );',
-'',
-'    apex_plugin_util.print_display_only(',
-'        p_item_name        => p_item.name',
-'      , p_display_value    => l_display_value',
-'      , p_show_line_breaks => false',
-'      , p_escape           => p_item.escape_output',
-'      , p_attributes       => p_item.element_attributes',
-'    );',
-'',
-'    -- Tell APEX that this field is NOT navigable',
-'    l_render_result.is_navigable := false;',
-'  else',
-'    l_name := apex_plugin.get_input_name_for_page_item(false);',
-'',
-'/*',
-'    if (apex_application.g_debug) then',
-'      -- Using a textarea when debugging allows you to see the hidden item value',
-'      sys.htp.prn (',
-'        ''<textarea id="'' || p_item.name ||''" ''',
-'               || ''name="'' ||l_name || ''" rows="2" cols="80">''',
-'               || p_value',
-'               ||''</textarea>'');',
-'    else',
-'*/',
-'      sys.htp.p(''',
-'        <input type="hidden" ''',
-'           || ''id="'' || p_item.name || ''" ''',
-'           || ''name="'' || l_name || ''" ''',
-'           || ''value="'' || apex_plugin_util.escape(p_value => p_value, p_escape => p_item.escape_output) || ''" ''',
-'           || ''/>'');',
-'    -- end if;',
-'',
-'    sys.htp.p (',
-'        ''<fieldset id="'' || p_item.name || ''_fieldset" class="jtlitem-controls">'');',
-'    sys.htp.prn (',
-'        ''<input type="text" id="'' || l_item_display || ''" ''',
-'             || ''value="''|| apex_plugin_util.escape(p_value => l_display_value, p_escape => p_item.escape_output) || ''" ''',
-'             || ''size="'' || p_item.element_width||''" ''',
-'             || ''maxlength="''||p_item.element_max_length||''" ''',
-'             || ''data-lang="'' || sys.htf.escape_sc(l_language) || ''" ''',
-'             || ''class="text_field jtlitem '' || p_item.element_css_classes || ''"''',
-'             || p_item.element_attributes ||'' />'' );',
-'    if l_edit_languages then',
-'      sys.htp.p (',
-'                  ''    <button type="button" class="jtlitem-modal-open t-Button">'' || l_crlf',
-'               || ''      <span class="t-Icon fa fa-globe"></span>'' || l_crlf',
-'               || ''    </button>'' || l_crlf',
-'               );',
-'    end if;',
-'    sys.htp.p (',
-'        '' </fieldset>'');',
-'    ',
-'  end if;',
-'',
-'  apex_css.add_file(',
-'      p_name      => ''jtl_item''',
-'    , p_directory => p_plugin.file_prefix',
-'  );',
-'',
-'  apex_javascript.add_library(',
-'      p_name      => ''jtl_item''',
-'    , p_directory => p_plugin.file_prefix',
-'    , p_check_to_add_minified => true',
-'  );',
-'',
-'  apex_javascript.add_onload_code (',
-'      p_code => ''$("'' || l_item_jq || ''").jtl_item({'' || l_crlf',
-'                      || apex_javascript.add_attribute(''lang'', l_language, true, true) || l_crlf',
-'                      || apex_javascript.add_attribute(''lang_codes'', l_languages_list, false, true) || l_crlf',
-'                      || apex_javascript.add_attribute(''messages'', l_messages, false, true) || l_crlf',
-'                      || apex_javascript.add_attribute(''dialogTitle'', l_dialog_title, false, false) || l_crlf',
-'             || ''});''',
-'            );',
-'',
-'',
-'  l_render_result.is_navigable := true;',
-'  return l_render_result;',
-'',
-'  exception',
-'    when OTHERS then',
-'      apex_debug.error(''Unhandled Exception'');',
-'      raise;',
-'end render;',
-'',
-'',
-'',
-'',
-'/**',
-' * Perform validations on the submitted data:',
-' *  - Ensure the data is JSON format',
-' *  - Ensure the JSON format is of the expected form',
-' *',
-' *',
-' * @example',
-' * ',
-' * @issue',
-' *',
-' * @author Jorge Rimblas',
-' * @created October 7, 2016',
-' * @param',
-' * @return',
-' */',
-'function validate (',
-'   p_item   in apex_plugin.t_page_item',
-' , p_plugin in apex_plugin.t_plugin',
-' , p_value  in varchar2',
-')',
-'return apex_plugin.t_page_item_validation_result',
-'is',
-'  l_result apex_plugin.t_page_item_validation_result;',
-'',
-'  l_default_language  gt_string;',
-'  l_languages_list    gt_string;',
-'  l_language          gt_string;',
-'  l_display_value     gt_string;',
-'  l_error_suffix      gt_string;',
-'',
-'  l_idx               number;',
-'  l_count             number;',
-'  l_found_empty       boolean := false;',
-'',
-'begin',
-'',
-'  apex_debug.message(''BEGIN'');',
-'',
-'  l_default_language := coalesce(apex_plugin_util.replace_substitutions(p_item.attribute_01)',
-'                               , apex_util.get_session_lang);',
-'  l_languages_list := apex_plugin_util.get_plsql_function_result(p_plugin.attribute_01); -- Enabled Language List',
-'',
-'  apex_json.parse(p_value);',
-'  apex_debug.message(''parsing: %s'', p_value);',
-'  l_count := apex_json.get_count(p_path => ''.'');',
-'  apex_debug.message(''lagunages count: %s'', l_count);',
-'',
-'  -- The item is required, check the "tl" attributes to see if the value is present',
-'  if p_item.is_required then',
-'    apex_debug.message(''p_item.is_required = true'', l_count);',
-'    l_idx := 1;',
-'    l_found_empty := false;',
-'    -- loop through all the languages or until we find an empty one.',
-'    while not l_found_empty and l_idx <= nvl(l_count,0) loop',
-'      -- get the current language',
-'      l_language := apex_json.get_varchar2(p_path => ''[%d].l'', p0 => l_idx);',
-'      -- get the translation value for the language',
-'      l_display_value := apex_json.get_varchar2(p_path => ''[%d].tl'', p0 => l_idx);',
-'',
-'      apex_debug.message(''language: %s'', l_language);',
-'',
-'      if l_display_value is null then',
-'        -- this one is null, so we will return a required value error',
-'        l_found_empty := true;',
-'        if l_language = l_default_language then',
-'          apex_debug.message(''The current language is null'');',
-'          l_error_suffix := '''';',
-'        else',
-'          -- Hmmm, the language that is null is NOT the one displayed to the user',
-'          -- add the language code as a prefix to the error.',
-'          apex_debug.message(''A different language is null'');',
-'          l_error_suffix := ''('' || l_language || '')'';',
-'        end if;',
-'      end if;',
-'      l_idx := l_idx + 1;',
-'      ',
-'    end loop;',
-'',
-'  end if;',
-'',
-'  if l_found_empty then',
-'    -- Define APEX.PAGE_ITEM_IS_REQUIRED in your language.',
-'    l_result.message := wwv_flow_lang.system_message(''APEX.PAGE_ITEM_IS_REQUIRED'');',
-'    -- if l_result.message = ''APEX.PAGE_ITEM_IS_REQUIRED'' then',
-'    --   -- message not defined yet',
-'    --   l_result.message := apex_lang.message(''#LABEL# must have some value.'');',
-'    -- end if;',
-'    -- add the language suffix, if the error doesn''t apply to the language being displayed.',
-'    l_result.message := l_result.message || l_error_suffix;',
-'  else',
-'    l_result.message := '''';',
-'  end if;',
-'',
-'  return l_result;',
-'',
-'exception',
-'  when apex_json.e_parse_error then',
-'    -- Somehow we don''t have valid JSON in our item.',
-'    -- This is more critical for 11g where we don''t have "is json" constraints',
-'    l_result.message := ''The JSON structure for #LABEL# is invalid.'';',
-'    return l_result;',
-'',
-'end validate;',
-''))
-,p_render_function=>'render'
-,p_validation_function=>'validate'
+,p_render_function=>'tk_jtl_plugin.render'
+,p_validation_function=>'tk_jtl_plugin.validate'
 ,p_standard_attributes=>'VISIBLE:FORM_ELEMENT:SESSION_STATE:READONLY:ESCAPE_OUTPUT:QUICKPICK:SOURCE:ELEMENT:WIDTH:PLACEHOLDER'
 ,p_substitute_attributes=>true
 ,p_subscribe_plugin_settings=>true
@@ -344,8 +44,8 @@ wwv_flow_api.create_plugin(
 ,p_files_version=>48
 );
 wwv_flow_api.create_plugin_attribute(
- p_id=>wwv_flow_api.id(47042339765941918)
-,p_plugin_id=>wwv_flow_api.id(47042147073940200)
+ p_id=>wwv_flow_api.id(567255907190315619)
+,p_plugin_id=>wwv_flow_api.id(567255714498313901)
 ,p_attribute_scope=>'APPLICATION'
 ,p_attribute_sequence=>1
 ,p_display_sequence=>10
@@ -359,8 +59,8 @@ wwv_flow_api.create_plugin_attribute(
 'It is recommended that when new languages are enabled for the applicating that the JSON columns be updated to include the new language.'))
 );
 wwv_flow_api.create_plugin_attribute(
- p_id=>wwv_flow_api.id(47042602390942039)
-,p_plugin_id=>wwv_flow_api.id(47042147073940200)
+ p_id=>wwv_flow_api.id(567256169815315740)
+,p_plugin_id=>wwv_flow_api.id(567255714498313901)
 ,p_attribute_scope=>'APPLICATION'
 ,p_attribute_sequence=>2
 ,p_display_sequence=>20
@@ -393,8 +93,8 @@ wwv_flow_api.create_plugin_attribute(
 '</pre>'))
 );
 wwv_flow_api.create_plugin_attribute(
- p_id=>wwv_flow_api.id(47043338508942064)
-,p_plugin_id=>wwv_flow_api.id(47042147073940200)
+ p_id=>wwv_flow_api.id(567256905933315765)
+,p_plugin_id=>wwv_flow_api.id(567255714498313901)
 ,p_attribute_scope=>'COMPONENT'
 ,p_attribute_sequence=>1
 ,p_display_sequence=>10
@@ -405,8 +105,8 @@ wwv_flow_api.create_plugin_attribute(
 ,p_help_text=>'This is the language code for the current session. If empty, the plugin will use "apex_util.get_session_lang". Substitution Strings are also supported, for example &BROWSER_LANGUAGE.'
 );
 wwv_flow_api.create_plugin_attribute(
- p_id=>wwv_flow_api.id(47042922397942052)
-,p_plugin_id=>wwv_flow_api.id(47042147073940200)
+ p_id=>wwv_flow_api.id(567256489822315753)
+,p_plugin_id=>wwv_flow_api.id(567255714498313901)
 ,p_attribute_scope=>'COMPONENT'
 ,p_attribute_sequence=>2
 ,p_display_sequence=>20
@@ -418,6 +118,33 @@ wwv_flow_api.create_plugin_attribute(
 ,p_help_text=>wwv_flow_utilities.join(wwv_flow_t_varchar2(
 'Return true or false. When true a button to edit all the languages will be present. The button will open a dialog that will allow the user to edit all the languages specified in the "Language List" parameter.<br>',
 'When false and a new record is created the "Installed Languages" Application plugin attribute will be used to seed all available languages.'))
+);
+wwv_flow_api.create_plugin_attribute(
+ p_id=>wwv_flow_api.id(443571797250073347)
+,p_plugin_id=>wwv_flow_api.id(567255714498313901)
+,p_attribute_scope=>'COMPONENT'
+,p_attribute_sequence=>3
+,p_display_sequence=>30
+,p_prompt=>'Subtype'
+,p_attribute_type=>'SELECT LIST'
+,p_is_required=>true
+,p_default_value=>'TEXT'
+,p_is_translatable=>false
+,p_lov_type=>'STATIC'
+);
+wwv_flow_api.create_plugin_attr_value(
+ p_id=>wwv_flow_api.id(443576171954075135)
+,p_plugin_attribute_id=>wwv_flow_api.id(443571797250073347)
+,p_display_sequence=>10
+,p_display_value=>'Text'
+,p_return_value=>'TEXT'
+);
+wwv_flow_api.create_plugin_attr_value(
+ p_id=>wwv_flow_api.id(443576504118076194)
+,p_plugin_attribute_id=>wwv_flow_api.id(443571797250073347)
+,p_display_sequence=>20
+,p_display_value=>'Textarea'
+,p_return_value=>'TEXTAREA'
 );
 end;
 /
@@ -501,8 +228,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(47102272989358958)
-,p_plugin_id=>wwv_flow_api.id(47042147073940200)
+ p_id=>wwv_flow_api.id(567315840413732659)
+,p_plugin_id=>wwv_flow_api.id(567255714498313901)
 ,p_file_name=>'jtl_item.min.js'
 ,p_mime_type=>'application/javascript'
 ,p_file_charset=>'utf-8'
@@ -645,8 +372,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(47102698876360842)
-,p_plugin_id=>wwv_flow_api.id(47042147073940200)
+ p_id=>wwv_flow_api.id(567316266300734543)
+,p_plugin_id=>wwv_flow_api.id(567255714498313901)
 ,p_file_name=>'jtl_item.js'
 ,p_mime_type=>'application/javascript'
 ,p_file_charset=>'utf-8'
@@ -668,8 +395,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(47103104885362083)
-,p_plugin_id=>wwv_flow_api.id(47042147073940200)
+ p_id=>wwv_flow_api.id(567316672309735784)
+,p_plugin_id=>wwv_flow_api.id(567255714498313901)
 ,p_file_name=>'jtl_item.min.css'
 ,p_mime_type=>'text/css'
 ,p_file_charset=>'utf-8'
@@ -695,8 +422,8 @@ end;
 /
 begin
 wwv_flow_api.create_plugin_file(
- p_id=>wwv_flow_api.id(47103510003362630)
-,p_plugin_id=>wwv_flow_api.id(47042147073940200)
+ p_id=>wwv_flow_api.id(567317077427736331)
+,p_plugin_id=>wwv_flow_api.id(567255714498313901)
 ,p_file_name=>'jtl_item.css'
 ,p_mime_type=>'text/css'
 ,p_file_charset=>'utf-8'
