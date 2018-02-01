@@ -154,7 +154,13 @@ You'll also miss out of the JSON constraint on the column, but this is not a con
 * There seems to be an issue in 12.1 and 12.2 when using when joining than one JSON column on a table. See this [livesql script](https://livesql.oracle.com/apex/livesql/s/dwifcd7pqq1eg64z0jkblyin6) for a test case. However, Patch# 24460392 seems to have fixed this issue.
 * You found something? Please report an [Issue](https://github.com/rimblas/jtlitem/issues).
 
-## Pending
+## Change Log
+### v1.0.0
+* Implemented TEXTAREAS
+
+### v0.1.0 initial release
+
+## Roadmap
 * Need to implement `TEXTAREA`, currently all translated items are input boxes.
 * The following functionality needs to be tested:
     - Hide
