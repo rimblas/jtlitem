@@ -49,6 +49,7 @@ When you create the APEX item, select a size for the item that matches your desi
 * "Messages": Use this setting to specify what messages should be displayed to users in different parts of the plugin. For example, buttons and dialog.
 
 #### Plugin Item Attributes
+* "Subtype": Defined the type of field; "Text" or "Textarea"
 * "Session Language": use it to override the currently selected APEX language.  You should normally leave it empty.
 * "Edit Languages": Controls whether the user will see the translation button "globe". It accepts a PL/SQL Function Returning Boolean.
 **IMPORTANT** The "Edit Languages" field to `return true;` to see the globe button.
@@ -119,13 +120,9 @@ The JSON Translation concept, or JTL for short, has several benefits for APEX ap
 * The included `tk_jtl_plugin` package includes several useful [functions and procedures](docs/tk_jtl_plugin.md) for manipulating the JSON object in a programmatic way.
 
 
-## Disclaimer
-Although we successfully use this plugin and technique in production internally at [Insum Solutions](https://insum.ca), use at your own risk and without any warranties.
-
-
 ## Running in 11g without JSON columns
 
-You can still run this plugin on 11g without the JSON column support.  Simply declare your column as `varchar2` or `clob`. Then use `apex_json.to_xmltype` to convert the JSON to XML and `xmltape` to extract the JSON.
+You can still run this plugin on 11g without the JSON column support.  Simply declare your column as `varchar2` or `clob`. Then use `apex_json.to_xmltype` to convert the JSON to XML and `xmltype` to extract the JSON.
 
 ```
 select /*+ no_merge */ p.id
@@ -160,12 +157,22 @@ You'll also miss out of the JSON constraint on the column, but this is not a con
 
 ### v0.1.0 initial release, Feb 12, 2017
 
+## Upgrade
+If you're upgrading from v0.1.0 to v1.0.0 the upgrade should be seamless. There's a new Item Attribute (_Subtype_) which should default to "Text" for all existing instances of the plugin.
+
+The demo app now user a new table `px_jtl_with_clob` and view `px_jtl_with_clob_vl` and should install those objects on upgrade. It should also change `px_projects2.description_jtl` to varchar2(4000) to better work with textareas.
+
+```
+alter table px_projects2 modify description_jtl varchar2(4000);
+```
+
 ## Roadmap
 * Display language names instead of language codes on the edit modal.
 * Switch to new architecture for use in Interactive Grid.
-* The following functionality needs to be tested:
-    - Hide
-    - Show
+
+
+## Disclaimer
+Although we successfully use this plugin and technique in production internally at [Insum Solutions](https://insum.ca), use at your own risk and without any warranties.
 
 ## Credits
 Thanks to [Insum Solutions](https://insum.ca) for sponsoring this project.

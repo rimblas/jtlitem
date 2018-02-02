@@ -307,8 +307,10 @@ $.widget( "tk.jtl_item", {
        }
        else {
          langTable +=
-         '    <textarea class="textarea apex-item-textarea jtlitem-value" data-lang="' + lang + '" cols="' + uiw._values.fieldSize + '" rows="' + uiw._values.fieldRows + '">' +
-         apex.util.escapeHTMLAttr(uiw._hasTag(lang)) + '</textarea>';
+         '    <textarea class="textarea apex-item-textarea jtlitem-value" data-lang="' + lang + '"' +
+              ' cols="' + uiw._values.fieldSize + '" rows="' + uiw._values.fieldRows + '"' + 
+              ' maxlength="' + uiw._values.fieldMaxLength + '"' + 
+              '>' + apex.util.escapeHTMLAttr(uiw._hasTag(lang)) + '</textarea>';
        }
 
        langTable +=

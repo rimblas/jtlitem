@@ -73,19 +73,21 @@ is
 begin
   apex_debug.message('BEGIN');
 
+  apex_debug.message('p_item.attribute_01 (Default language): %s', p_item.attribute_01);
+  apex_debug.message('p_item.attribute_02 (Edit languages): %s', p_item.attribute_02);
+  apex_debug.message('p_item.attribute_03 (Item Type): %s', p_item.attribute_03);
+
   l_default_language := coalesce(apex_plugin_util.replace_substitutions(p_item.attribute_01)
                                , apex_util.get_session_lang);
   l_edit_languages := apex_plugin_util.get_plsql_func_result_boolean(p_item.attribute_02);
   l_languages_list := apex_plugin_util.get_plsql_function_result(p_plugin.attribute_01); -- Enabled Language List
-  l_item_type := nvl(p_item.attribute_03, 'TEXT');
+  l_item_type := coalesce(p_item.attribute_03, 'TEXT');
 
-  apex_debug.message('p_item.attribute_02: %s', p_item.attribute_02);
-  apex_debug.message('p_item.attribute_03: %s', p_item.attribute_03);
 
-  if (apex_application.g_debug) then
-    apex_plugin_util.debug_page_item(p_plugin, p_item, p_value, p_is_readonly, p_is_printer_friendly);
-    apex_debug.message('l_default_language: %s', l_default_language);
-  end if;
+  -- apex_application.g_debug
+  apex_debug.message('l_default_language: %s', l_default_language);
+  apex_plugin_util.debug_page_item(p_plugin, p_item, p_value, p_is_readonly, p_is_printer_friendly);
+
   -- Tell APEX that this field is navigable
   l_render_result.is_navigable := true;
 
@@ -145,31 +147,23 @@ begin
   else
     l_name := apex_plugin.get_input_name_for_page_item(false);
 
-/*
-    if (apex_application.g_debug) then
-      -- Using a textarea when debugging allows you to see the hidden item value
-      sys.htp.prn (
-        '<textarea id="' || p_item.name ||'" '
-               || 'name="' ||l_name || '" rows="2" cols="80">'
-               || p_value
-               ||'</textarea>');
-    else
-*/
-      sys.htp.p('
-        <input type="hidden" '
-           || 'id="' || p_item.name || '" '
-           || 'name="' || l_name || '" '
-           || 'value="' || apex_plugin_util.escape(p_value => p_value, p_escape => p_item.escape_output) || '" '
-           || '/>');
-    -- end if;
+    -- this hidden item contains the full JSON column content (all languages!)
+    sys.htp.p('
+      <input type="hidden" '
+         || 'id="' || p_item.name || '" '
+         || 'name="' || l_name || '" '
+         || 'value="' || apex_plugin_util.escape(p_value => p_value, p_escape => p_item.escape_output) || '" '
+         || '/>'
+    );
 
-    sys.htp.p (
+    -- now render the visible element
+    sys.htp.p(
         '<fieldset id="' || p_item.name || '_fieldset" class="jtlitem-controls'
-     || case when l_item_type = 'TEXTAREA' then ' textarea' end 
-     || '" tabindex="-1">');
+         || case when l_item_type = 'TEXTAREA' then ' textarea' end 
+         || '" tabindex="-1">');
 
     if l_item_type = 'TEXT' then
-      sys.htp.prn (
+      sys.htp.prn(
           '<input type="text" id="' || l_item_display || '" '
                || 'value="'|| apex_plugin_util.escape(p_value => l_display_value, p_escape => p_item.escape_output) || '" '
                || 'size="' || p_item.element_width||'" '
@@ -178,10 +172,14 @@ begin
                || 'class="text_field apex-item-text jtlitem ' || p_item.element_css_classes || '"'
                || p_item.element_attributes ||' />' );
     else
-      sys.htp.prn (
+      -- Textareas don't use a value attribute, instead they contain their value 
+      -- in between the tags. Therefore, make sure not to add any spaces or other
+      -- characters that are not part of the value.
+      sys.htp.prn(
           '<textarea id="' || l_item_display || '" wrap="virtual" style="resize: both;" '
                || 'data-lang="' || sys.htf.escape_sc(l_language) || '" '
                || 'class="textarea apex-item-textarea jtlitem ' || p_item.element_css_classes || '"'
+               || 'maxlength="'||p_item.element_max_length||'" '
                || 'cols="' || p_item.element_width||'" '
                || 'rows="' || p_item.element_height||'" '
                -- || 'maxlength="'||p_item.element_max_length||'" '
@@ -191,27 +189,18 @@ begin
     end if;
 
     if l_edit_languages then
-      sys.htp.p (
-                  '    <button type="button" class="jtlitem-modal-open t-Button">' || l_crlf
-               || '      <span class="t-Icon fa fa-globe"></span>' || l_crlf
-               || '    </button>' || l_crlf
-               );
+      sys.htp.p('<button type="button" class="jtlitem-modal-open t-Button">' || l_crlf
+             || '  <span class="t-Icon fa fa-globe"></span>' || l_crlf
+             || '</button>' || l_crlf
+             );
     end if;
+
+    -- Close fieldset.  Note that the textarea should have a fieldset regardless 
+    -- of the modal control button
     sys.htp.p (
         ' </fieldset>');
     
   end if;
-
-  apex_css.add_file(
-      p_name      => 'jtl_item'
-    , p_directory => p_plugin.file_prefix
-  );
-
-  apex_javascript.add_library(
-      p_name      => 'jtl_item'
-    , p_directory => p_plugin.file_prefix
-    , p_check_to_add_minified => true
-  );
 
   apex_javascript.add_onload_code (
       p_code => '$("' || l_item_jq || '").jtl_item({' || l_crlf
