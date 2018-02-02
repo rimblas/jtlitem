@@ -142,17 +142,18 @@ You'll also miss out of the JSON constraint on the column, but this is not a con
 
 
 ## Issues/Questions
-* How do I "install" a new language? — New languages added at a later date will require the `_JTL` columns be *updated* with the new language.
 * How do I use a select list, checkbox, radio button with translations? — These elements require an LOV, as such use your `_VL` view (as explained [here](#accessing-your-data)) on the LOV to display the correct language.
-* Removing languages may require data updates also, however, this could be handled by the plugin.
 * The `_JTL` column datatype does not match required column size. Columns need to be as large as the desired size times the languages plus the JSON overhead. Use a size `{Required Size} x {# of Languages} + offset`
+* How do I "install" a new language? — New languages added at a later date will require the `_JTL` columns be *updated* with the new language.
+* Removing languages may require data updates also, however, this could be handled by the plugin.
 * Column sizes need to be enforced via APEX Maximum Length field and in the `_VL` views as part of the `JSON_TABLE`.
-* Plugin does not perform size validations or validate the correct JSON structure is in place.
-* There seems to be an issue in 12.1 and 12.2 when using when joining than one JSON column on a table. See this [livesql script](https://livesql.oracle.com/apex/livesql/s/dwifcd7pqq1eg64z0jkblyin6) for a test case. However, Patch# 24460392 seems to have fixed this issue.
+* With the new Textarea you may want to store larger content. You can define your table column as `CLOB` and then extract a `VARCHAR2(4000)` with `JSON_TABLE`. However, at this time, `JSON_TABLE` cannot return CLOBs, so you will be limited to 4000 chars.  I have not tested with the extended 32k varchars, that may be a way around this.
+* Plugin does not perform size validations or validate the correct JSON structure is in place. It does however check that what you store is valid JSON (in case you're not using the JSON constraint from 12c).
+* There seems to be an issue in 12.1 and 12.2 when using when joining than one JSON column on a table. See this [livesql script](https://livesql.oracle.com/apex/livesql/s/dwifcd7pqq1eg64z0jkblyin6) for a test case. However, *IMPORTANT* Patch# 24460392 seems to have fixed this issue.
 * You found something? Please report an [Issue](https://github.com/rimblas/jtlitem/issues).
 
 ## Change Log
-### v1.0.0, February 1, 2018
+### v1.0.0, February 2, 2018
 * Implemented TEXTAREAS
 
 ### v0.1.0 initial release, Feb 12, 2017
