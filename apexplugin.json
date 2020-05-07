@@ -1,5 +1,5 @@
 {
-  "name" : "JTL Item",
+  "name" : "JTL Item - Multi-Translations with JSON",
   "version" : "1.0.0",
   "description" : "Store multi-language translations (MLS) in a single JSON column and use this Item plugin to easily maintain them.\nNow with TEXTAREA support.",
   "keywords" : ["MLS", "multi-language", "language", "translations", "translated", "JSON"],
