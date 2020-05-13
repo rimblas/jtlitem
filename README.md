@@ -79,7 +79,7 @@ as
 select t.id
      , t.name_jtl
      , jd.lang
-     , jd.tls name
+     , jd.tl name
      , t.alias
      , t.active_ind
      , t.created_by
