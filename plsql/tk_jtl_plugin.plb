@@ -11,14 +11,121 @@ is
 --------------------------------------------------------------------------------
 -- TYPES
 /**
- * @type 
+ * @type scope_name_t for logging
  */
+subtype scope_name_t is varchar2(60);
+
 
 -- CONSTANTS
 /**
  * @constant gc_scope_prefix Standard logger package name
  */
 gc_scope_prefix constant VARCHAR2(31) := lower($$PLSQL_UNIT) || '.';
+
+
+
+procedure log(p_msg in varchar2, p_scope  in varchar2)
+is
+begin
+
+  $IF $$OOS_LOGGER $THEN
+  logger.log(p_msg, p_scope);
+  $ELSE
+  apex_debug.message(p_scope || ':' || substr(p_msg,1,3000));
+  $END
+
+end log;
+
+
+procedure log_error(p_msg in varchar2, p_scope  in varchar2)
+is
+begin
+
+  $IF $$LOGGER $THEN
+  logger.log_error(p_msg, p_scope);
+  $ELSE
+  apex_debug.message(p_scope || ': ' || p_msg);
+  $END
+
+end log_error;
+
+
+
+/**
+ * given a JTL JSON structure find the display value for the language
+ *
+ *
+ * @example
+ * 
+ * @issue
+ *
+ * @author Jorge Rimblas
+ * @created May 21, 2020
+ * @param x_result_status
+ * @return
+ */
+procedure set_display_value(
+      p_jtl_value     in  gt_string
+    , p_for_language  in  gt_string
+    , x_display_value out gt_string
+    , x_language      out gt_string
+  )
+is
+  $IF $$OOS_LOGGER $THEN
+  l_scope  logger_logs.scope%type := gc_scope_prefix || 'set_display_value';
+  $ELSE
+  l_scope scope_name_t := gc_scope_prefix || 'set_display_value';
+  $END
+
+  l_language          gt_string;
+  l_display_value     gt_string;
+
+  l_idx               number;
+  l_count             number;
+  l_found             boolean := false;
+
+begin
+  log('BEGIN', l_scope);
+
+  -- get the value for the language
+  apex_json.parse(p_jtl_value);
+  log('parsing:' || p_jtl_value, l_scope);
+  l_count := apex_json.get_count(p_path => '.');
+  log('language count:' || l_count, l_scope);
+
+  l_idx := 1;
+  l_found := false;
+  while not l_found and l_idx <= nvl(l_count,0) loop
+    l_language := apex_json.get_varchar2(p_path => '[%d].l', p0 => l_idx);
+    log('language:' || l_language, l_scope);
+
+    if l_language = p_for_language then
+      l_display_value := apex_json.get_varchar2(p_path => '[%d].tl', p0 => l_idx);
+      log('Translation:' || l_display_value, l_scope);
+      l_found := true;
+    end if;
+    l_idx := l_idx + 1;
+    
+  end loop;
+
+  -- If we didn't find a language match, default to the first entry
+  if not l_found then
+    l_language := apex_json.get_varchar2(p_path => '[%d].l', p0 => 1);
+    l_display_value := apex_json.get_varchar2(p_path => '[%d].tl', p0 => 1);
+    apex_debug.message('Didn''t find a language match, using the 1st language: %s', l_language);
+  end if;
+
+  x_language := l_language;
+  x_display_value := l_display_value;
+
+  log('END', l_scope);
+
+  exception
+    when OTHERS then
+      log_error('Unhandled Exception', l_scope);
+      raise;
+end set_display_value;
+
 
 
 
@@ -44,6 +151,11 @@ function render(
  )
 return apex_plugin.t_page_item_render_result
 is
+  $IF $$OOS_LOGGER $THEN
+  l_scope  logger_logs.scope%type := gc_scope_prefix || 'render';
+  $ELSE
+  l_scope scope_name_t := gc_scope_prefix || 'render';
+  $END
 
   l_default_language        gt_string;
   l_language                gt_string;
@@ -51,11 +163,6 @@ is
   l_languages_list          gt_string;
   l_dialog_title            gt_string := p_item.plain_label;
   l_messages                gt_string := p_plugin.attribute_02; -- for MLS messages
-
-  l_postfix           varchar2(8);
-  l_idx               number;
-  l_count             number;
-  l_found             boolean := false;
 
   l_name              varchar2(255);
   l_display_value     gt_string;
@@ -71,7 +178,7 @@ is
   l_crlf              char(2) := chr(13)||chr(10);
 
 begin
-  apex_debug.message('BEGIN');
+  log('BEGIN', l_scope);
 
   apex_debug.message('p_item.attribute_01 (Default language): %s', p_item.attribute_01);
   apex_debug.message('p_item.attribute_02 (Edit languages): %s', p_item.attribute_02);
@@ -84,42 +191,24 @@ begin
   l_item_type := coalesce(p_item.attribute_03, 'TEXT');
 
 
-  -- apex_application.g_debug
-  apex_debug.message('l_default_language: %s', l_default_language);
+  log('l_default_language:' || l_default_language, l_scope);
   apex_plugin_util.debug_page_item(p_plugin, p_item, p_value, p_is_readonly, p_is_printer_friendly);
 
   -- Tell APEX that this field is navigable
   l_render_result.is_navigable := true;
 
-
-  -- get the value for the language
-  apex_json.parse(p_value);
-  apex_debug.message('parsing: %s', p_value);
-  l_count := apex_json.get_count(p_path => '.');
-  apex_debug.message('lagunages count: %s', l_count);
-
-  l_idx := 1;
-  l_found := false;
-  while not l_found and l_idx <= nvl(l_count,0) loop
-    l_language := apex_json.get_varchar2(p_path => '[%d].l', p0 => l_idx);
-    apex_debug.message('language: %s', l_language);
-
-    if l_language = l_default_language then
-      l_display_value := apex_json.get_varchar2(p_path => '[%d].tl', p0 => l_idx);
-      apex_debug.message('Translation: %s', l_display_value);
-      l_found := true;
-    end if;
-    l_idx := l_idx + 1;
-    
-  end loop;
-
-  -- If we didn't find a language match, default to the first entry
-  if not l_found then
-    -- l_language := l_default_language;
-    l_language := apex_json.get_varchar2(p_path => '[%d].l', p0 => 1);
-    l_display_value := apex_json.get_varchar2(p_path => '[%d].tl', p0 => 1);
-    apex_debug.message('Didn''t find a language match, using the 1st language: %s', l_language);
+  if p_value is null then
+    l_language := l_default_language;
+    l_display_value := null;
+  else
+    set_display_value(
+        p_jtl_value     => p_value
+      , p_for_language  => l_default_language
+      , x_display_value => l_display_value
+      , x_language      => l_language
+    );
   end if;
+
 
   -- If a page item saves state, we have to call the get_input_name_for_page_item
   -- to render the internal hidden p_arg_names field. It will also return the
@@ -247,6 +336,12 @@ function validate (
 )
 return apex_plugin.t_page_item_validation_result
 is
+  $IF $$OOS_LOGGER $THEN
+  l_scope  logger_logs.scope%type := gc_scope_prefix || 'validate';
+  $ELSE
+  l_scope scope_name_t := gc_scope_prefix || 'validate';
+  $END
+
   l_result apex_plugin.t_page_item_validation_result;
 
   l_default_language  gt_string;

@@ -109,9 +109,9 @@ where id <> nvl(:P25_ID, -1)
   and name = tk_jtl_plugin.get_tl_value(:P25_NAME_JTL)
 ```
 
-Also, the plugin `render` and `validate` functions are part of the `tk_jtl_plugin` package. You'll want to remove the code from the Plugin Source and change the render and validate functions to `tk_jtl_plugin.render` and `tk_jtl_plugin.validate` respectively.
+Also, the plugin `render` and `validate` functions are part of the `tk_jtl_plugin` package. You'll want to **remove the code** from the Plugin Source and change the render and validate functions to `tk_jtl_plugin.render` and `tk_jtl_plugin.validate` respectively.  [Moving the code to the database](https://rimblas.com/blog/2020/05/move-your-apex-plugin-plsql-code-to-the-database/) will greatly increase the load speed of all your plugins.
 
-## Why?
+## Why JSON?
 If you ever had to create a multi-language app, you know that a typical approach is to store the translated values on a translation table. Therefore, every translated entity (table) will require a child table with translations. This design pattern is cumbersome to work with and comes with significan application overhead.
 The JSON Translation concept, or JTL for short, has several benefits for APEX applications:
 * It allows the developer to continue working with a single table using the Built-In "Automatic Row Fetch" and "Automatic Row Processing" processes.
@@ -153,6 +153,11 @@ You'll also miss out of the JSON constraint on the column, but this is not a con
 * You found something? Please report an [Issue](https://github.com/rimblas/jtlitem/issues).
 
 ## Change Log
+### v1.1.0, May 21, 2020
+* Behavior change: Item languages can now be edited by default (the attribute "Edit Languages" is now set to "true" by default.)
+* Bug fix: Issue when the initial creation of a record used a language code other than "en"
+* For APEX 5.0.4 use v1.0.0 or get it from the test app [f102_apex_504.sql](demo/f102_apex_504.sql)
+
 ### v1.0.0, February 2, 2018
 * Implemented TEXTAREAS
 
@@ -169,7 +174,7 @@ alter table px_projects2 modify description_jtl varchar2(4000);
 
 ## Roadmap
 * Display language names instead of language codes on the edit modal.
-* Switch to new architecture for use in Interactive Grid.
+* Switch to new architecture for use in Interactive Grid. **In Progress** coming soon.
 
 ## Data Conversion
 If you're converting existing data to use the JTL column, see this [Data Conversion](docs/data-conversion.md) for more details.
