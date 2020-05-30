@@ -177,7 +177,7 @@ Starting with v1.1.0, the "Edit Languages" attribute defaults to true, but exist
 
 ## Roadmap
 * Display language names instead of language codes on the edit modal.
-* Switch to new architecture for use in Interactive Grid. **In Progress** coming soon.
+
 
 ## Data Conversion
 If you're converting existing data to use the JTL column, see this [Data Conversion](docs/data-conversion.md) for more details.
