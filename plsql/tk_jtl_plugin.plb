@@ -142,20 +142,20 @@ end set_display_value;
  * @param p_item Standard plugin parameters
  * @return
  */
-function render(
-    p_item                in apex_plugin.t_page_item
-  , p_plugin              in apex_plugin.t_plugin
-  , p_value               in gt_string
-  , p_is_readonly         in boolean
-  , p_is_printer_friendly in boolean
- )
-return apex_plugin.t_page_item_render_result
+procedure render  (
+    p_item     in apex_plugin.t_item
+  , p_plugin   in apex_plugin.t_plugin
+  , p_param    in apex_plugin.t_item_render_param
+  , p_result   in out nocopy apex_plugin.t_item_render_result 
+)
 is
   $IF $$OOS_LOGGER $THEN
   l_scope  logger_logs.scope%type := gc_scope_prefix || 'render';
   $ELSE
   l_scope scope_name_t := gc_scope_prefix || 'render';
   $END
+
+  c_name           constant varchar2(30) := apex_plugin.get_input_name_for_item;
 
   l_default_language        gt_string;
   l_language                gt_string;
@@ -169,16 +169,12 @@ is
   l_item_type         gt_string;
 
   l_onload_code       gt_string;
-  l_item_jq           gt_string := apex_plugin_util.page_item_names_to_jquery(p_item.name);
-  l_item_display      gt_string := p_item.name ||'_DISPLAY';
-  -- l_item_display_jq   gt_string := apex_plugin_util.page_item_names_to_jquery(l_item_display);
+  l_ig_mode           boolean;
 
-  l_render_result     apex_plugin.t_page_item_render_result;
-  
   l_crlf              char(2) := chr(13)||chr(10);
 
 begin
-  log('BEGIN', l_scope);
+  log('START', l_scope);
 
   apex_debug.message('p_item.attribute_01 (Default language): %s', p_item.attribute_01);
   apex_debug.message('p_item.attribute_02 (Edit languages): %s', p_item.attribute_02);
@@ -189,20 +185,19 @@ begin
   l_edit_languages := apex_plugin_util.get_plsql_func_result_boolean(p_item.attribute_02);
   l_languages_list := apex_plugin_util.get_plsql_function_result(p_plugin.attribute_01); -- Enabled Language List
   l_item_type := coalesce(p_item.attribute_03, 'TEXT');
+  l_ig_mode := (p_item.component_type_id = apex_component.c_comp_type_ig_column);
 
-
+  log('l_languages_list:' || l_languages_list, l_scope);
   log('l_default_language:' || l_default_language, l_scope);
-  apex_plugin_util.debug_page_item(p_plugin, p_item, p_value, p_is_readonly, p_is_printer_friendly);
+  apex_plugin_util.debug_item(p_plugin, p_item);
 
-  -- Tell APEX that this field is navigable
-  l_render_result.is_navigable := true;
 
-  if p_value is null then
+  if p_param.value is null then
     l_language := l_default_language;
     l_display_value := null;
   else
     set_display_value(
-        p_jtl_value     => p_value
+        p_jtl_value     => p_param.value
       , p_for_language  => l_default_language
       , x_display_value => l_display_value
       , x_language      => l_language
@@ -213,15 +208,17 @@ begin
   -- If a page item saves state, we have to call the get_input_name_for_page_item
   -- to render the internal hidden p_arg_names field. It will also return the
   -- HTML field name which we have to use when we render the HTML input field.
+  l_name := apex_plugin.get_input_name_for_page_item(p_is_multi_value=>false);
 
-  if p_is_readonly or p_is_printer_friendly then
-    -- if the item is readonly we will still render a hidden field with
-    -- the value so that it can be used when the page gets submitted
-    apex_plugin_util.print_hidden_if_readonly(
-        p_item_name           => p_item.name,
-        p_value               => p_value,
-        p_is_readonly         => p_is_readonly,
-        p_is_printer_friendly => p_is_printer_friendly );
+  apex_plugin_util.print_hidden_if_readonly (
+       p_item_name           => p_item.name
+     , p_value               => p_param.value
+     , p_is_readonly         => p_param.is_readonly
+     , p_is_printer_friendly => p_param.is_printer_friendly
+  );
+
+  if p_param.is_readonly or p_param.is_printer_friendly then 
+    log('.. display only', l_scope); 
 
     apex_plugin_util.print_display_only(
         p_item_name        => p_item.name
@@ -232,78 +229,64 @@ begin
     );
 
     -- Tell APEX that this field is NOT navigable
-    l_render_result.is_navigable := false;
+    p_result.is_navigable := false;
   else
-    l_name := apex_plugin.get_input_name_for_page_item(false);
-
-    -- this hidden item contains the full JSON column content (all languages!)
-    sys.htp.p('
-      <input type="hidden" '
-         || 'id="' || p_item.name || '" '
-         || 'name="' || l_name || '" '
-         || 'value="' || apex_plugin_util.escape(p_value => p_value, p_escape => p_item.escape_output) || '" '
-         || '/>'
-    );
 
     -- now render the visible element
-    sys.htp.p(
-        '<fieldset id="' || p_item.name || '_fieldset" class="jtlitem-controls'
-         || case when l_item_type = 'TEXTAREA' then ' textarea' end 
-         || '" tabindex="-1">');
-
     if l_item_type = 'TEXT' then
       sys.htp.prn(
-          '<input type="text" id="' || l_item_display || '" '
-               || 'value="'|| apex_plugin_util.escape(p_value => l_display_value, p_escape => p_item.escape_output) || '" '
+          '<input type="text"'
+               || apex_plugin_util.get_element_attributes(p_item, c_name, 'jtlitem apex-item-text text_field')
                || 'size="' || p_item.element_width||'" '
                || 'maxlength="'||p_item.element_max_length||'" '
                || 'data-lang="' || sys.htf.escape_sc(l_language) || '" '
-               || 'class="text_field apex-item-text jtlitem ' || p_item.element_css_classes || '"'
-               || p_item.element_attributes ||' />' );
+               || p_item.element_attributes
+               || 'value="');
+      apex_plugin_util.print_escaped_value(l_display_value);
+      sys.htp.prn('"');
+      sys.htp.prn(' data-value="');
+      apex_plugin_util.print_escaped_value(p_param.value);
+      sys.htp.prn('"/>');
     else
       -- Textareas don't use a value attribute, instead they contain their value 
       -- in between the tags. Therefore, make sure not to add any spaces or other
       -- characters that are not part of the value.
       sys.htp.prn(
-          '<textarea id="' || l_item_display || '" wrap="virtual" style="resize: both;" '
+          '<textarea '
+               || apex_plugin_util.get_element_attributes(p_item, c_name, 'jtlitem apex-item-textarea textarea')
                || 'data-lang="' || sys.htf.escape_sc(l_language) || '" '
-               || 'class="textarea apex-item-textarea jtlitem ' || p_item.element_css_classes || '"'
                || 'maxlength="'||p_item.element_max_length||'" '
                || 'cols="' || p_item.element_width||'" '
                || 'rows="' || p_item.element_height||'" '
-               -- || 'maxlength="'||p_item.element_max_length||'" '
-               || p_item.element_attributes ||' >'
-               || apex_plugin_util.escape(p_value => l_display_value, p_escape => p_item.escape_output)
-       || '</textarea>');
+               || p_item.element_attributes);
+      sys.htp.prn(' data-value="');
+      apex_plugin_util.print_escaped_value(p_param.value);
+      sys.htp.prn('"/>');
+      sys.htp.prn(apex_plugin_util.escape(p_value => l_display_value, p_escape => p_item.escape_output));
+      sys.htp.prn('</textarea>');
     end if;
 
     if l_edit_languages then
-      sys.htp.p('<button type="button" class="jtlitem-modal-open t-Button">' || l_crlf
+      sys.htp.p('<button type="button" class="jtlitem-modal-open a-Button">' || l_crlf
              || '  <span class="t-Icon fa fa-globe"></span>' || l_crlf
              || '</button>' || l_crlf
              );
     end if;
 
-    -- Close fieldset.  Note that the textarea should have a fieldset regardless 
-    -- of the modal control button
-    sys.htp.p (
-        ' </fieldset>');
-    
-  end if;
-
-  apex_javascript.add_onload_code (
-      p_code => '$("' || l_item_jq || '").jtl_item({' || l_crlf
+    apex_javascript.add_onload_code (
+      p_code => '$("#'|| p_item.name || '").jtlItem({' || l_crlf
+                      || apex_javascript.add_attribute('itemName', p_item.name, true, true) || l_crlf
                       || apex_javascript.add_attribute('lang', l_language, true, true) || l_crlf
                       || apex_javascript.add_attribute('lang_codes', l_languages_list, false, true) || l_crlf
                       || apex_javascript.add_attribute('messages', l_messages, false, true) || l_crlf
                       || apex_javascript.add_attribute('itemType', l_item_type, false, true) || l_crlf
-                      || apex_javascript.add_attribute('dialogTitle', l_dialog_title, false, false) || l_crlf
+                      || apex_javascript.add_attribute('dialogTitle', l_dialog_title, false, true) || l_crlf
+                      || apex_javascript.add_attribute('igMode', l_ig_mode, false, false) || l_crlf
              || '});'
             );
+  end if; -- display_only section
 
 
-  l_render_result.is_navigable := true;
-  return l_render_result;
 
   exception
     when OTHERS then
@@ -311,6 +294,25 @@ begin
       raise;
 end render;
 
+
+
+procedure metadata (
+  p_item   in            apex_plugin.t_item,
+  p_plugin in            apex_plugin.t_plugin,
+  p_param  in            apex_plugin.t_item_meta_data_param,
+  p_result in out nocopy apex_plugin.t_item_meta_data_result )
+is
+  $IF $$OOS_LOGGER $THEN
+  l_scope  logger_logs.scope%type := gc_scope_prefix || 'metadata';
+  $ELSE
+  l_scope scope_name_t := gc_scope_prefix || 'render';
+  $END
+begin
+  log('START', l_scope);
+
+  -- apex_debug.message('p_item.value %s', p_param.value);
+  p_result.escape_output := false;
+end metadata;
 
 
 
@@ -329,20 +331,18 @@ end render;
  * @param
  * @return
  */
-function validate (
-   p_item   in apex_plugin.t_page_item
- , p_plugin in apex_plugin.t_plugin
- , p_value  in varchar2
+procedure validate (
+    p_item   in            apex_plugin.t_item
+  , p_plugin in            apex_plugin.t_plugin
+  , p_param  in            apex_plugin.t_item_validation_param
+  , p_result in out nocopy apex_plugin.t_item_validation_result
 )
-return apex_plugin.t_page_item_validation_result
 is
   $IF $$OOS_LOGGER $THEN
   l_scope  logger_logs.scope%type := gc_scope_prefix || 'validate';
   $ELSE
   l_scope scope_name_t := gc_scope_prefix || 'validate';
   $END
-
-  l_result apex_plugin.t_page_item_validation_result;
 
   l_default_language  gt_string;
   l_languages_list    gt_string;
@@ -362,8 +362,8 @@ begin
                                , apex_util.get_session_lang);
   l_languages_list := apex_plugin_util.get_plsql_function_result(p_plugin.attribute_01); -- Enabled Language List
 
-  apex_json.parse(p_value);
-  apex_debug.message('parsing: %s', p_value);
+  apex_json.parse(p_param.value);
+  apex_debug.message('parsing: %s', p_param.value);
   l_count := apex_json.get_count(p_path => '.');
   apex_debug.message('lagunages count: %s', l_count);
 
@@ -391,7 +391,7 @@ begin
           -- Hmmm, the language that is null is NOT the one displayed to the user
           -- add the language code as a prefix to the error.
           apex_debug.message('A different language is null');
-          l_error_suffix := '(' || l_language || ')';
+          l_error_suffix := '[' || l_language || '] ';
         end if;
       end if;
       l_idx := l_idx + 1;
@@ -402,25 +402,22 @@ begin
 
   if l_found_empty then
     -- Define APEX.PAGE_ITEM_IS_REQUIRED in your language.
-    l_result.message := wwv_flow_lang.system_message('APEX.PAGE_ITEM_IS_REQUIRED');
-    -- if l_result.message = 'APEX.PAGE_ITEM_IS_REQUIRED' then
+    p_result.message := wwv_flow_lang.system_message('APEX.PAGE_ITEM_IS_REQUIRED');
+    -- if p_result.message = 'APEX.PAGE_ITEM_IS_REQUIRED' then
     --   -- message not defined yet
-    --   l_result.message := apex_lang.message('#LABEL# must have some value.');
+    --   p_result.message := apex_lang.message('#LABEL# must have some value.');
     -- end if;
     -- add the language suffix, if the error doesn't apply to the language being displayed.
-    l_result.message := l_result.message || l_error_suffix;
+    p_result.message := l_error_suffix || p_result.message;
   else
-    l_result.message := '';
+    p_result.message := '';
   end if;
-
-  return l_result;
 
 exception
   when apex_json.e_parse_error then
     -- Somehow we don't have valid JSON in our item.
     -- This is more critical for 11g where we don't have "is json" constraints
-    l_result.message := 'The JSON structure for #LABEL# is invalid.';
-    return l_result;
+    p_result.message := 'The JSON structure for #LABEL# is invalid.';
 
 end validate;
 

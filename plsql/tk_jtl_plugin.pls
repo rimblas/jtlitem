@@ -30,7 +30,7 @@ pragma exception_init(duplicate_language,-20000);
 --------------------------------------------------------------------------------
 /**
  * Render the plugin
- *
+ * 
  *
  * @example
  * 
@@ -38,24 +38,28 @@ pragma exception_init(duplicate_language,-20000);
  *
  * @author Jorge Rimblas
  * @created October 12, 2016
- * @return apex_plugin.t_page_item_render_result
+ * @return
  */
-function render(
-    p_item                in apex_plugin.t_page_item
-  , p_plugin              in apex_plugin.t_plugin
-  , p_value               in gt_string
-  , p_is_readonly         in boolean
-  , p_is_printer_friendly in boolean
- )
-return apex_plugin.t_page_item_render_result;
+procedure render (
+    p_item     in apex_plugin.t_item
+  , p_plugin   in apex_plugin.t_plugin
+  , p_param    in apex_plugin.t_item_render_param
+  , p_result   in out nocopy apex_plugin.t_item_render_result 
+);
 
+procedure metadata (
+  p_item   in            apex_plugin.t_item,
+  p_plugin in            apex_plugin.t_plugin,
+  p_param  in            apex_plugin.t_item_meta_data_param,
+  p_result in out nocopy apex_plugin.t_item_meta_data_result
+);
 
-function validate (
-   p_item   in apex_plugin.t_page_item
- , p_plugin in apex_plugin.t_plugin
- , p_value  in varchar2
-)
-return apex_plugin.t_page_item_validation_result;
+procedure validate (
+    p_item   in            apex_plugin.t_item
+  , p_plugin in            apex_plugin.t_plugin
+  , p_param  in            apex_plugin.t_item_validation_param
+  , p_result in out nocopy apex_plugin.t_item_validation_result
+);
 
 
 --------------------------------------------------------------------------------

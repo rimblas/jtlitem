@@ -3,7 +3,7 @@ as
 select t.id
      , t.name_jtl
      , jd.lang
-     , jd.tls name
+     , jd.tl name
      , t.alias
      , t.active_ind
      , t.created_by
@@ -18,4 +18,3 @@ select t.id
        )) jd
  where jd.lang = (select nvl(apex_util.get_session_lang,'en') from dual)
 /
--- SESSION_LANG, BROWSER_LANGUAGE

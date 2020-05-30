@@ -3,7 +3,7 @@
 [![APEX Community](https://cdn.rawgit.com/Dani3lSun/apex-github-badges/78c5adbe/badges/apex-community-badge.svg)](https://github.com/Dani3lSun/apex-github-badges) [![APEX Plugin](https://cdn.rawgit.com/Dani3lSun/apex-github-badges/b7e95341/badges/apex-plugin-badge.svg)](https://github.com/Dani3lSun/apex-github-badges)
 [![APEX Built with Love](https://cdn.rawgit.com/Dani3lSun/apex-github-badges/7919f913/badges/apex-love-badge.svg)](https://github.com/Dani3lSun/apex-github-badges)
 
-An Oracle APEX Item plugin for storing multi-language translations (MLS) in a JSON column.
+An Oracle APEX Item plugin for storing multi-language translations (MLS) in a JSON column. Now with IG support!
 
 This plugin allows you to store multiple language translations on a **single table column**. Optionally, the user can popup a dialog and edit all the available translations.
 
@@ -52,7 +52,6 @@ When you create the APEX item, select a size for the item that matches your desi
 * "Subtype": Defined the type of field; "Text" or "Textarea"
 * "Session Language": use it to override the currently selected APEX language.  You should normally leave it empty.
 * "Edit Languages": Controls whether the user will see the translation button "globe". It accepts a PL/SQL Function Returning Boolean.
-**IMPORTANT** The "Edit Languages" field to `return true;` to see the globe button.
 
 ### Other Settings
 Optionally, use the `APEX.PAGE_ITEM_IS_REQUIRED` message to translate your "#LABEL# must have some value." to your correct language.  The plugin `validate` function will fetch this value (via `wwv_flow_lang.system_message`) when the "Required" attribute is set.
@@ -153,6 +152,10 @@ You'll also miss out of the JSON constraint on the column, but this is not a con
 * You found something? Please report an [Issue](https://github.com/rimblas/jtlitem/issues).
 
 ## Change Log
+### v1.2.0, May 29, 2020
+* New IG Support! It is now possible to use the JTL Item with the Interactive Grid.
+* Support for Floating Labels
+
 ### v1.1.0, May 21, 2020
 * Behavior change: Item languages can now be edited by default (the attribute "Edit Languages" is now set to "true" by default.)
 * Bug fix: Issue when the initial creation of a record used a language code other than "en"
@@ -164,13 +167,13 @@ You'll also miss out of the JSON constraint on the column, but this is not a con
 ### v0.1.0 initial release, Feb 12, 2017
 
 ## Upgrade
-If you're upgrading from v0.1.0 to v1.0.0 the upgrade should be seamless. There's a new Item Attribute (_Subtype_) which should default to "Text" for all existing instances of the plugin.
+If you're upgrading from v1.0.0 or v1.1.0 to v1.2.0 the upgrade should be seamless. 
+In v1.2.0 the plugin did switch from the deprecated render function to the new render procedure. Significant changes were required to support IG. Chielfy, the JSON is not render as a hidden item any more. Instead, for regular items the initial values is set via a `data-value` attribute and later maintain in the plugin memory but in sync with the `data-value` attribute.
 
-The demo app now user a new table `px_jtl_with_clob` and view `px_jtl_with_clob_vl` and should install those objects on upgrade. It should also change `px_projects2.description_jtl` to varchar2(4000) to better work with textareas.
+If you've implemented some jQuery or JavaScript calls into the plugin, be aware that the widget name changed to the more standard name `ui.jtlItem`.
 
-```sql
-alter table px_projects2 modify description_jtl varchar2(4000);
-```
+Starting with v1.1.0, the "Edit Languages" attribute defaults to true, but existing items will not be affected (this is standard APEX plugin upgrade procedure).
+
 
 ## Roadmap
 * Display language names instead of language codes on the edit modal.
