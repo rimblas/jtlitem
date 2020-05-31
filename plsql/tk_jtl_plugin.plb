@@ -169,7 +169,6 @@ is
   l_item_type         gt_string;
 
   l_onload_code       gt_string;
-  l_ig_mode           boolean;
 
   l_crlf              char(2) := chr(13)||chr(10);
 
@@ -185,14 +184,15 @@ begin
   l_edit_languages := apex_plugin_util.get_plsql_func_result_boolean(p_item.attribute_02);
   l_languages_list := apex_plugin_util.get_plsql_function_result(p_plugin.attribute_01); -- Enabled Language List
   l_item_type := coalesce(p_item.attribute_03, 'TEXT');
-  l_ig_mode := (p_item.component_type_id = apex_component.c_comp_type_ig_column);
+  -- l_ig_mode := (p_item.component_type_id = apex_component.c_comp_type_ig_column);
+
 
   log('l_languages_list:' || l_languages_list, l_scope);
   log('l_default_language:' || l_default_language, l_scope);
   apex_plugin_util.debug_item(p_plugin, p_item);
 
 
-  if p_param.value is null then
+  if p_param.value is null or p_param.value_set_by_controller then
     l_language := l_default_language;
     l_display_value := null;
   else
@@ -281,7 +281,7 @@ begin
                       || apex_javascript.add_attribute('messages', l_messages, false, true) || l_crlf
                       || apex_javascript.add_attribute('itemType', l_item_type, false, true) || l_crlf
                       || apex_javascript.add_attribute('dialogTitle', l_dialog_title, false, true) || l_crlf
-                      || apex_javascript.add_attribute('igMode', l_ig_mode, false, false) || l_crlf
+                      || apex_javascript.add_attribute('controllerMode', p_param.value_set_by_controller, false, false) || l_crlf
              || '});'
             );
   end if; -- display_only section

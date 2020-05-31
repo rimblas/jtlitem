@@ -1,5 +1,5 @@
 /*
- * JTL Item v1.1 - http://apex.world/plugins/
+ * JTL Item v1.3.0 - http://apex.world/plugins/
  *
  * Licensed under MIT License (MIT)
  * Jorge Rimblas © 2017-2020
@@ -32,61 +32,10 @@ $.widget( "ui.jtlItem", {
 
   _topApex: apex.util.getTopApex(),
 
-  _initGridConfig: function () {
-    var uiw = this,
-        region = apex.region.findClosest(uiw._item$[0]);
-
-    uiw.log("_initGridConfig");
-    uiw.elog("uiw._item$", uiw._item$);
-    uiw.elog("region", region);
-
-    if (uiw._values.igMode) {
-      // uiw._elements.$grid = region.widget().interactiveGrid("getCurrentView");
-      uiw._elements.$ig = region.widget().interactiveGrid();
-      uiw._elements.$grid = region.widget().interactiveGrid("getViews").grid;
-      uiw.elog("_elements.$grid:", uiw._elements.$grid);
-
-      region.widget().on("interactivegridsave", function() {
-        // Would like to call clearSelection() instead, but can't figure out how.
-        // Turn edit off to force a fresh load of data again.
-        // Yes, this is a total hack, and would love to learn of a better approach
-        uiw._elements.$grid.setEditMode(false);
-      });
-
-    }
-    else {
-      uiw.log("not an IG");
-    }
-
-  },
-
-
-  _resetFocus: function () {
-    var uiw = this;
-
-    uiw.log("_resetFocus");
-
-    if (uiw._values.igMode) {  // are we inside a grid?
-      // find our column in the grid
-      uiw.elog("uiw._elements.$grid", uiw._elements.$grid);
-      uiw.elog("uiw._elements.$ig", uiw._elements.$ig);
-
-      var recordId = uiw._elements.$grid.model.getRecordId(uiw._elements.$grid.view$.grid('getSelectedRecords')[0]);
-      var column = uiw._elements.$ig.interactiveGrid('option').config.columns.filter(function (column) {
-        return column.staticId === uiw.options.itemName;
-      })[0];
-      // go to our cell and focus it      
-      uiw._elements.$grid.view$.grid('gotoCell', recordId, column.name);
-      uiw._elements.$grid.focus();
-    } else {
-      // we are not in a grid, so focus the item that called us
-      uiw._item$.trigger('focus');
-    }
-  },
-
 
   _createPrivateStorage: function() {
-     var uiw = this;
+     var uiw = this,
+         DIALOG_POPUP_CLASS = 'jtlitem-dialog';
 
      uiw._item$ = $('#' + uiw.options.itemName);
 
@@ -98,11 +47,12 @@ $.widget( "ui.jtlItem", {
         languages: {},
         tagMap: {},
         messages: JSON.parse(uiw.options.messages),
-        grid: null,
         totalLanguages: 0,
         disabled: false,
         newRecord: false,
-        igMode: uiw.options.igMode
+        popupClass: DIALOG_POPUP_CLASS,
+        popupSEL: 'div.' + DIALOG_POPUP_CLASS,
+        controllerMode: uiw.options.controllerMode
      };
 
      uiw._elements = {
@@ -112,6 +62,7 @@ $.widget( "ui.jtlItem", {
         $itemset: {},
         $mlsButton: {},
         $ig: {},
+        $grid: {},
         $dialog: {},
         $dialogContent: {},
         $saveButton: {},
@@ -129,6 +80,8 @@ $.widget( "ui.jtlItem", {
     // Options are already merged and stored in this.options (or uiw.options)
     uiw.log("_create");
     uiw.log(uiw.options.itemName);
+
+    uiw._addCSSToTopLevel();
 
     // helper function for finding the index position of our current displayed language
     function language_index (j, l) {
@@ -151,7 +104,7 @@ $.widget( "ui.jtlItem", {
     catch (e) {console.error("The defined languages are not formatted correctly. See Shared Componets > Components Settings > JTL Item [Plug-in]", uiw.options.lang_codes);}
     uiw._values.totalLanguages = uiw._values.languages.length;
 
-    if (!uiw._values.igMode || uiw.element.data("value") ) {
+    if (!uiw._values.controllerMode || uiw.element.data("value") ) {
       // We are an not an IG column (where the value is set via displayValueFor) 
       // or we are an item with an initial value
       initJSON = uiw.element.data("value");
@@ -185,6 +138,75 @@ $.widget( "ui.jtlItem", {
   },
 
 
+  _initGridConfig: function () {
+    var uiw = this,
+        region = apex.region.findClosest(uiw._item$[0]);
+
+    uiw.log("_initGridConfig");
+    uiw.elog("uiw._item$", uiw._item$);
+    uiw.elog("region", region);
+
+    if (uiw._values.controllerMode) {
+      // uiw._elements.$grid = region.widget().interactiveGrid("getCurrentView");
+      uiw._elements.$ig = region.widget().interactiveGrid();
+      uiw._elements.$grid = region.widget().interactiveGrid("getViews").grid;
+      uiw.elog("_elements.$grid:", uiw._elements.$grid);
+
+/*
+      region.widget().on("interactivegridsave", function() {
+        // Would like to call clearSelection() instead, but can't figure out how.
+        // Turn edit off to force a fresh load of data again.
+        // Yes, this is a total hack, and would love to learn of a better approach
+        uiw._elements.$grid.setEditMode(false);
+      });
+*/
+
+    }
+    else {
+      uiw.log("not an IG");
+    }
+
+  },
+
+
+  _resetFocus: function () {
+    var uiw = this;
+
+    uiw.log("_resetFocus");
+
+    if (uiw._values.controllerMode) {  // are we inside a grid?
+      // Since we have a apex.item().getPopupSelector this code is really not necessary
+      // but it seems to provide a much better user experience becase once the popup closes
+      // we're back editing the cell as opposed to having to force the editing.
+
+      // uiw.elog("uiw._elements.$grid", uiw._elements.$grid);
+      // uiw.elog("uiw._elements.$ig", uiw._elements.$ig);
+
+      try {
+        // find our column in the grid
+        // Thank you to Menno Hoogendijk for portions of this code
+        // https://github.com/mennooo/orclapex-modal-lov
+
+        var recordId = uiw._elements.$grid.model.getRecordId(uiw._elements.$grid.view$.grid('getSelectedRecords')[0]);
+        var column = uiw._elements.$ig.interactiveGrid('option').config.columns.filter(function (column) {
+          return column.staticId === uiw.options.itemName;
+        })[0];
+        // go to our cell and focus it      
+        uiw._elements.$grid.view$.grid('gotoCell', recordId, column.name);
+        uiw._elements.$grid.focus();
+      }
+      catch (e) {
+        console.warn("There were problems trying to refocus on the cell being edited");
+      }
+
+    } else {
+      // we are not in a grid, so focus the item that called us
+      uiw._item$.trigger('focus');
+    }
+  },
+
+
+
 
   _initApexItem: function () {
     var uiw = this;
@@ -199,7 +221,8 @@ $.widget( "ui.jtlItem", {
           uiw._initDataJSON(JSON.parse(pValue || "{}"));
 
           if (pDisplayValue || !pValue || pValue.length === 0) {
-              // empty pValue
+              // empty pValue, we should be done
+              uiw._item$.val();
           } else {
               // NOT empty pValue
               if (!pDisplayValue) {
@@ -222,8 +245,13 @@ $.widget( "ui.jtlItem", {
        disable: function() {
           uiw.disable();
        },
+       getPopupSelector: function() {
+          return uiw._values.popupSEL;
+       },
        displayValueFor: function (pValue) {
-          var jtlJSON = {};
+          var prevjtlJSON = {},
+              jtlJSON = {},
+              returnValue;
           // The IG calls this code to set the initial display values
           uiw.log("apex.item.displayValueFor", pValue);
           if (pValue) {
@@ -235,20 +263,43 @@ $.widget( "ui.jtlItem", {
 
 
           }
+          prevjtlJSON = uiw._values.dataJSON;  // store the prev value
+                                               // displayValueFor should NOT change state
           uiw._initDataJSON(jtlJSON);
-          return uiw._getTL(uiw.options.lang);
+          returnValue = uiw._getTL(uiw.options.lang);
+          uiw._initDataJSON(prevjtlJSON);      // restore the value
+
+          return returnValue;
        }
     });
 
   },
 
 
+
+  // Thank you to Menno Hoogendijk for this code
+  // https://github.com/mennooo/orclapex-modal-lov
+  _addCSSToTopLevel: function () {
+    var uiw = this;
+    // CSS file is always present when the current window is the top window, so do nothing
+    if (window === window.top) {
+      return;
+    }
+    var cssSelector = 'link[rel="stylesheet"][href*="jtl_item"]';
+
+    // Check if file exists in top window
+    if (uiw._topApex.jQuery(cssSelector).length === 0) {
+      uiw._topApex.jQuery('head').append($(cssSelector).clone());
+    }
+  },
+
+
   _initElements: function() {
      var uiw = this;
 
-     uiw._elements.$window = $(window);
-     uiw._elements.$document = $(document);
-     uiw._elements.$body = $(document.body);
+     uiw._elements.$window = uiw._topApex.jQuery(window);
+     uiw._elements.$document = uiw._topApex.jQuery(window.top.document);
+     uiw._elements.$body = uiw._topApex.jQuery(window.top.document.body);
 
   },
 
@@ -256,9 +307,9 @@ $.widget( "ui.jtlItem", {
   _initDialogElements: function() {
      var uiw = this;
 
-     uiw._elements.$dialogContent = $('div.jtlitem-content');
-     uiw._elements.$saveButton = $('button.jtlitem-save-button');
-     uiw._elements.$cancelButton = $('button.jtlitem-cancel-button');
+     uiw._elements.$dialogContent = uiw._topApex.jQuery('div.jtlitem-content');
+     uiw._elements.$saveButton = uiw._topApex.jQuery('button.jtlitem-save-button');
+     uiw._elements.$cancelButton = uiw._topApex.jQuery('button.jtlitem-cancel-button');
 
   },
 
@@ -281,6 +332,8 @@ $.widget( "ui.jtlItem", {
   },
 
 
+  // _syncLanguageMap initis the base data for _getTL
+  // It creates a map of language codes and their values for fast access
   _syncLanguageMap: function() {
      var uiw = this,
          i = null,
@@ -341,11 +394,12 @@ $.widget( "ui.jtlItem", {
   },
 
 
-
+  // Maintains the JTL JSON data in sync.
+  // if creating a new record, all the entered values are used for ALL the languages
+  // otherwise the entered value goes into the curr_lang_index only
   _syncJSONdata: function(eventObj) {
      // var uiw = eventObj.data.uiw,
-     var uiw,
-         lang_index;
+     var uiw;
 
      if (typeof eventObj != "undefined") {
         // we were call from an event
@@ -357,8 +411,6 @@ $.widget( "ui.jtlItem", {
      }
      uiw.log("_syncJSONdata");
 
-     lang_index = uiw._values.curr_lang_index;
-
      if (uiw._values.newRecord) {
         // On new record we want to save the new entered value into the ALL the
         // records in the JSON structure
@@ -368,7 +420,7 @@ $.widget( "ui.jtlItem", {
      }
      else {
         // save the new text into the JSON structure for the current language
-        uiw._values.dataJSON[lang_index].tl = uiw._item$.val();
+        uiw._values.dataJSON[uiw._values.curr_lang_index].tl = uiw._item$.val();
      }
 
      uiw._syncLanguageMap();
@@ -386,6 +438,7 @@ $.widget( "ui.jtlItem", {
         .bind('click', {uiw: uiw}, uiw._handleSaveButtonClick);
 
   },
+
 
 
   _handleCancelButtonClick: function(eventObj) {
@@ -407,13 +460,15 @@ $.widget( "ui.jtlItem", {
      uiw._elements.$dialogContent.find('.jtlitem-value').each(function(i,el){
         // loop through all dialog elements and store translations
         // back into the dataJSON structure
-        uiw.log(i + "(" + el.dataset.lang + "):" + el.value);
+
+        // uiw.log(i + "(" + el.dataset.lang + "):" + el.value);
 
         uiw._values.dataJSON[i].l = el.dataset.lang;
         uiw._values.dataJSON[i].tl = el.value;
-        if (uiw._values.curr_lang_index == i) {
+        if (uiw._values.curr_lang_index === i) {
            display_value = el.value;
         }
+
      });
 
      uiw._syncLanguageMap();
@@ -448,11 +503,19 @@ $.widget( "ui.jtlItem", {
 
   _showDialog: function() {
      var uiw = this,
+         DIALOG_CLASS = 'ui-dialog',  // we prefer it to 'ui-dialog--apex' to avoid re-centering
          langTable,
          curr_lang = uiw._values.curr_lang_index,
+         dialogPosition,
          dialogHtml;
 
      uiw.log("_showDialog");
+
+
+     if (uiw._values.controllerMode || !apex.jQuery.isEmptyObject(uiw._elements.$grid)) {
+        uiw.log('we didn\'t get a hold of the grid, maybe try again');
+        uiw._initGridConfig();
+     }
 
      langTable = 
            '<table class="t-Report-report" summary="Available Translations">\n' +
@@ -486,7 +549,7 @@ $.widget( "ui.jtlItem", {
      '</table>\n';
 
       dialogHtml =
-           '<div class="jtlitem-dialog"><div class="jtlitem-container ui-widget">\n' +
+           '<div class="' + uiw._values.popupClass + '"><div class="jtlitem-container ui-widget">\n' +
            '  <div class="jtlitem-button-container">\n' +
            '     <button class="jtlitem-cancel-button t-Button">' +
            '       <span class="t-Button-label">' + uiw._values.messages.cancelButton + '</span>' +
@@ -505,7 +568,17 @@ $.widget( "ui.jtlItem", {
      uiw._elements.$body.append(dialogHtml);
 
      // ready a dialog container by creating a div
-     uiw._elements.$dialog = $('div.jtlitem-dialog');
+     // uiw._elements.$dialog = $(popupSEL);
+     uiw._elements.$dialog = uiw._topApex.jQuery(uiw._values.popupSEL);
+
+     // dialogPosition = uiw._item$.offset();  // position next to the item
+     if (window === window.top) {
+        dialogPosition = { my: "left", at: "left center", of: uiw._item$[0] };  // position next to the item
+     }
+     else {
+        // position based on the dialog (centered!)
+        dialogPosition = { my: "center center", at: "center center", of: uiw._topApex.jQuery('.'+DIALOG_CLASS)[0] };
+     }
 
      // open created div as a dialog
      uiw._elements.$dialog.dialog({
@@ -517,7 +590,8 @@ $.widget( "ui.jtlItem", {
          width:         'auto',
          height:        'auto',
          modal:         true,
-         position:      { my: "left", at: "left center", of: uiw._item$[0] },
+         dialogClass:   DIALOG_CLASS,
+         position:      dialogPosition,
          open: function() {
             // uiw._topApex.navigation.beginFreezeScroll();
             uiw._initDialogElements();
@@ -528,9 +602,9 @@ $.widget( "ui.jtlItem", {
          },
          close: function() {
 
-            $(this).dialog('destroy');
+            // $(this).dialog('destroy');
             uiw._elements.$dialog.remove();
-            uiw._elements.$document.find('div.jtlitem-dialog').remove();
+            uiw._elements.$document.find(uiw._values.popupSEL).remove();
             // uiw._topApex.navigation.endFreezeScroll();
 
             uiw._resetFocus();
