@@ -26,7 +26,7 @@ prompt APPLICATION 107 - JTL Item Translation Demo
 -- Application Export:
 --   Application:     107
 --   Name:            JTL Item Translation Demo
---   Date and Time:   22:59 Saturday May 30, 2020
+--   Date and Time:   21:13 Monday June 15, 2020
 --   Exported By:     JMR
 --   Flashback:       0
 --   Export Type:     Application Export
@@ -39,7 +39,7 @@ prompt APPLICATION 107 - JTL Item Translation Demo
 --     Items:                   20
 --     Validations:              1
 --     Processes:               11
---     Regions:                 18
+--     Regions:                 20
 --     Buttons:                 13
 --     Dynamic Actions:          3
 --   Shared Components:
@@ -116,7 +116,7 @@ wwv_flow_api.create_flow(
 ,p_substitution_string_01=>'EDIT_BUTTON'
 ,p_substitution_value_01=>'<i class="fa fa-pencil-square-o fa-2x"></i>'
 ,p_last_updated_by=>'JORGE@RIMBLAS.COM'
-,p_last_upd_yyyymmddhh24miss=>'20200530225853'
+,p_last_upd_yyyymmddhh24miss=>'20200615211254'
 ,p_file_prefix => nvl(wwv_flow_application_install.get_static_app_file_prefix,'')
 ,p_files_version=>9
 ,p_ui_type_name => null
@@ -7770,8 +7770,7 @@ wwv_flow_api.create_authentication(
 'procedure post_auth',
 'is',
 'begin',
-'  apex_util.set_session_lang(''en'');',
-'  :G_LANG := ''en'';',
+'  :G_LANG := nvl(apex_util.get_session_lang, ''en'');',
 'end;',
 ''))
 ,p_invalid_session_type=>'LOGIN'
@@ -7953,7 +7952,6 @@ wwv_flow_api.create_plugin(
 '  l_item_type         gt_string;',
 '',
 '  l_onload_code       gt_string;',
-'  l_ig_mode           boolean;',
 '',
 '  l_crlf              char(2) := chr(13)||chr(10);',
 '',
@@ -7969,14 +7967,24 @@ wwv_flow_api.create_plugin(
 '  l_edit_languages := apex_plugin_util.get_plsql_func_result_boolean(p_item.attribute_02);',
 '  l_languages_list := apex_plugin_util.get_plsql_function_result(p_plugin.attribute_01); -- Enabled Language List',
 '  l_item_type := coalesce(p_item.attribute_03, ''TEXT'');',
-'  l_ig_mode := (p_item.component_type_id = apex_component.c_comp_type_ig_column);',
+'  -- l_ig_mode := (p_item.component_type_id = apex_component.c_comp_type_ig_column);',
+'',
+'  if l_default_language is null then',
+'    select application_primary_language',
+'      into l_default_language',
+'      from apex_applications',
+'     where application_id = apex_application.get_application_id;',
+'     log(''fallback language:'' || l_default_language, l_scope);',
+'  end if;',
+'',
 '',
 '  log(''l_languages_list:'' || l_languages_list, l_scope);',
 '  log(''l_default_language:'' || l_default_language, l_scope);',
+'',
 '  apex_plugin_util.debug_item(p_plugin, p_item);',
 '',
 '',
-'  if p_param.value is null then',
+'  if p_param.value is null or p_param.value_set_by_controller then',
 '    l_language := l_default_language;',
 '    l_display_value := null;',
 '  else',
@@ -8065,7 +8073,7 @@ wwv_flow_api.create_plugin(
 '                      || apex_javascript.add_attribute(''messages'', l_messages, false, true) || l_crlf',
 '                      || apex_javascript.add_attribute(''itemType'', l_item_type, false, true) || l_crlf',
 '                      || apex_javascript.add_attribute(''dialogTitle'', l_dialog_title, false, true) || l_crlf',
-'                      || apex_javascript.add_attribute(''igMode'', l_ig_mode, false, false) || l_crlf',
+'                      || apex_javascript.add_attribute(''controllerMode'', p_param.value_set_by_controller, false, false) || l_crlf',
 '             || ''});''',
 '            );',
 '  end if; -- display_only section',
@@ -8217,7 +8225,7 @@ wwv_flow_api.create_plugin(
 '',
 'For better plugin render performance switch from the inline code to the package code.  Change the render, metadata, and validate procedures to tk_jtl_plugin.render, tk_jtl_plugin.metadata and tk_jtl_plugin.validate. Then REMOVE the inline code or you'
 ||' will not get the performance improvement.'))
-,p_version_identifier=>'1.3.0'
+,p_version_identifier=>'1.4.0'
 ,p_about_url=>'https://github.com/rimblas/jtlitem'
 ,p_files_version=>135
 );
@@ -9003,7 +9011,21 @@ wwv_flow_api.create_page(
 ,p_cache_mode=>'NOCACHE'
 ,p_help_text=>'No help is available for this page.'
 ,p_last_updated_by=>'JORGE@RIMBLAS.COM'
-,p_last_upd_yyyymmddhh24miss=>'20200530214956'
+,p_last_upd_yyyymmddhh24miss=>'20200531092244'
+);
+wwv_flow_api.create_page_plug(
+ p_id=>wwv_flow_api.id(10367175634981510)
+,p_plug_name=>'Fork Me'
+,p_region_template_options=>'#DEFAULT#'
+,p_plug_template=>wwv_flow_api.id(472567816637671470)
+,p_plug_display_sequence=>20
+,p_include_in_reg_disp_sel_yn=>'Y'
+,p_plug_display_point=>'REGION_POSITION_01'
+,p_plug_source=>'<a href="https://github.com/rimblas/jtlitem"><img width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_darkblue_121621.png?resize=149%2C149" class="fork-me attachment-full size-full" alt="Fork me on GitHub" data-r'
+||'ecalc-dims="1"></a>'
+,p_plug_query_options=>'DERIVED_REPORT_COLUMNS'
+,p_attribute_01=>'N'
+,p_attribute_02=>'HTML'
 );
 wwv_flow_api.create_page_plug(
  p_id=>wwv_flow_api.id(472603993150671698)
@@ -9018,6 +9040,8 @@ wwv_flow_api.create_page_plug(
 ,p_plug_source_type=>'NATIVE_BREADCRUMB'
 ,p_menu_template_id=>wwv_flow_api.id(472597417510671533)
 ,p_plug_query_row_template=>1
+,p_plug_query_options=>'DERIVED_REPORT_COLUMNS'
+,p_plug_display_condition_type=>'NEVER'
 );
 wwv_flow_api.create_page_plug(
  p_id=>wwv_flow_api.id(472628750697679370)
@@ -9039,18 +9063,14 @@ wwv_flow_api.create_page_plug(
 );
 wwv_flow_api.create_page_plug(
  p_id=>wwv_flow_api.id(475558964477690659)
-,p_plug_name=>'About'
+,p_plug_name=>'About the JTL Item Plugin'
 ,p_region_template_options=>'#DEFAULT#:t-Region--scrollBody'
 ,p_plug_template=>wwv_flow_api.id(472575991781671477)
 ,p_plug_display_sequence=>10
 ,p_include_in_reg_disp_sel_yn=>'Y'
 ,p_plug_display_point=>'BODY'
 ,p_plug_source=>wwv_flow_string.join(wwv_flow_t_varchar2(
-'<a href="https://github.com/rimblas/jtlitem"><img width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_darkblue_121621.png?resize=149%2C149" class="fork-me attachment-full size-full" alt="Fork me on GitHub" data-r'
-||'ecalc-dims="1"></a>',
-'',
-'',
-'This demo uses a single table with two columns that store translations in JSON format.<br>',
+'This demo uses tables with columns that store translations in JSON format.<br>',
 '<br>',
 'These JSON columns use a plugin that handles the JSON structure automatically. The user only sees the language selected.<br>',
 '',
@@ -9341,7 +9361,7 @@ wwv_flow_api.create_page(
 ,p_cache_mode=>'NOCACHE'
 ,p_help_text=>'No help is available for this page.'
 ,p_last_updated_by=>'JORGE@RIMBLAS.COM'
-,p_last_upd_yyyymmddhh24miss=>'20200530213744'
+,p_last_upd_yyyymmddhh24miss=>'20200615211254'
 );
 wwv_flow_api.create_page_plug(
  p_id=>wwv_flow_api.id(472605875083671808)
@@ -10543,7 +10563,12 @@ wwv_flow_api.create_page(
 ,p_step_sub_title_type=>'TEXT_WITH_SUBSTITUTIONS'
 ,p_first_item=>'AUTO_FIRST_ITEM'
 ,p_autocomplete_on_off=>'OFF'
+,p_javascript_code_onload=>wwv_flow_string.join(wwv_flow_t_varchar2(
+'$(".a-LinksList-item").addClass("t-Button").addClass("t-Button--pill");',
+''))
 ,p_inline_css=>wwv_flow_string.join(wwv_flow_t_varchar2(
+'.a-LinksList--lang {text-align: center;}',
+'a.a-LinksList-link {position: relative; z-index: 2;}',
 '.t-Login-logo.fa.appIcon {',
 'font-size: 50px;',
 '}',
@@ -10558,12 +10583,11 @@ wwv_flow_api.create_page(
 ''))
 ,p_step_template=>wwv_flow_api.id(472561748548671445)
 ,p_page_template_options=>'#DEFAULT#'
-,p_dialog_chained=>'Y'
 ,p_overwrite_navigation_list=>'N'
 ,p_page_is_public_y_n=>'Y'
 ,p_cache_mode=>'NOCACHE'
-,p_last_updated_by=>'JRIMBLAS'
-,p_last_upd_yyyymmddhh24miss=>'20170212162048'
+,p_last_updated_by=>'JORGE@RIMBLAS.COM'
+,p_last_upd_yyyymmddhh24miss=>'20200531092317'
 );
 wwv_flow_api.create_page_plug(
  p_id=>wwv_flow_api.id(472602655171671658)
@@ -10576,9 +10600,25 @@ wwv_flow_api.create_page_plug(
 ,p_plug_display_point=>'BODY'
 ,p_plug_query_row_template=>1
 ,p_plug_query_options=>'DERIVED_REPORT_COLUMNS'
+,p_plug_footer=>'Credentials: <b>demo/demo</b>'
 ,p_attribute_01=>'N'
 ,p_attribute_02=>'TEXT'
 ,p_attribute_03=>'Y'
+);
+wwv_flow_api.create_page_plug(
+ p_id=>wwv_flow_api.id(10367096258981409)
+,p_plug_name=>'Language List'
+,p_parent_plug_id=>wwv_flow_api.id(472602655171671658)
+,p_region_template_options=>'#DEFAULT#:t-Region--removeHeader:t-Region--scrollBody'
+,p_component_template_options=>'#DEFAULT#'
+,p_plug_template=>wwv_flow_api.id(472575991781671477)
+,p_plug_display_sequence=>10
+,p_include_in_reg_disp_sel_yn=>'N'
+,p_plug_display_point=>'BODY'
+,p_plug_source=>'apex_lang.emit_language_selector_list;'
+,p_plug_source_type=>'NATIVE_PLSQL'
+,p_plug_query_options=>'DERIVED_REPORT_COLUMNS'
+,p_plug_display_condition_type=>'NEVER'
 );
 wwv_flow_api.create_page_button(
  p_id=>wwv_flow_api.id(472602977262671676)

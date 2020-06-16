@@ -186,9 +186,18 @@ begin
   l_item_type := coalesce(p_item.attribute_03, 'TEXT');
   -- l_ig_mode := (p_item.component_type_id = apex_component.c_comp_type_ig_column);
 
+  if l_default_language is null then
+    select application_primary_language
+      into l_default_language
+      from apex_applications
+     where application_id = apex_application.get_application_id;
+     log('fallback language:' || l_default_language, l_scope);
+  end if;
+
 
   log('l_languages_list:' || l_languages_list, l_scope);
   log('l_default_language:' || l_default_language, l_scope);
+
   apex_plugin_util.debug_item(p_plugin, p_item);
 
 
