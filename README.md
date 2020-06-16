@@ -152,6 +152,13 @@ You'll also miss out of the JSON constraint on the column, but this is not a con
 * You found something? Please report an [Issue](https://github.com/rimblas/jtlitem/issues).
 
 ## Change Log
+### v1.4.0, June 15, 2020
+* Default Language to "application primary language" when apex_util.get_session_lang is empty
+
+### v1.3.0, May 30, 2020
+* Better dialog position inside of modal windows (the dialog is now anchored to the calling window)
+* Use p_param.value_set_by_controller to determine if regular item or controller.
+
 ### v1.2.0, May 29, 2020
 * New IG Support! It is now possible to use the JTL Item with the Interactive Grid.
 * Support for Floating Labels
